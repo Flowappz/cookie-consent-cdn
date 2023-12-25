@@ -1,5 +1,5 @@
 /**
- * VERSION: 1.0.0
+ * VERSION: 1.0.1
  */
 
 const sheet = new CSSStyleSheet();
@@ -18,6 +18,7 @@ sheet.replaceSync(`
 	gap: 2rem;
 	opacity: 1;
 	flex-wrap: wrap;
+  width: 100vw;
 }
 
 .cookie-container.hide {
