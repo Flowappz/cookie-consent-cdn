@@ -1,5 +1,5 @@
 /**
- * VERSION: 1.0.1
+ * VERSION: 1.0.2
  */
 
 const sheet = new CSSStyleSheet();
@@ -23,6 +23,10 @@ sheet.replaceSync(`
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+}
+
+.flowappz--cookie-container.hide {
+	display: none;
 }
 
 .flowappz--cookie-container .cookie-heading {
@@ -55,6 +59,7 @@ sheet.replaceSync(`
   padding: 12px 28px;
   border: none;
   font-weight: bold;
+	cursor: pointer;
 }
 .flowappz--cookie-container .button:last-child {
   background-color: white;
@@ -66,31 +71,39 @@ const sheets = document.adoptedStyleSheets || [];
 document.adoptedStyleSheets = [...sheets, sheet];
 
 const rejectButton = document.createElement("button");
-rejectButton.innerText = "Reject";
-
-const rejectButtonWrapper = document.createElement("div");
-rejectButtonWrapper.setAttribute("class", "agree");
-rejectButtonWrapper.appendChild(rejectButton);
+rejectButton.setAttribute("class", "button");
+rejectButton.innerText = "Reject all";
 
 const agreeButton = document.createElement("button");
-agreeButton.innerText = "Accept";
-
-const agreeButtonWrapper = document.createElement("div");
-agreeButtonWrapper.setAttribute("class", "agree");
-agreeButtonWrapper.appendChild(agreeButton);
+agreeButton.setAttribute("class", "button");
+agreeButton.innerText = "Accept all";
 
 const buttonGroup = document.createElement("div");
 buttonGroup.setAttribute("class", "button-group");
-buttonGroup.append(rejectButtonWrapper, agreeButtonWrapper);
+buttonGroup.append(agreeButton, rejectButton);
 
-const cookieText = document.createElement("p");
-cookieText.setAttribute("class", "cookie-text");
-cookieText.innerText =
-  "We use cookies and similar technologies that are necessary to operate the website. Additional cookies are used to perform analysis of website usage.";
+const cookieDescription = document.createElement("p");
+cookieDescription.setAttribute("class", "cookie-description");
+
+const descriptionText = document.createTextNode(
+  "We use cookies to improve user experience. Choose what cookies you allow us to use. You can read more about our Cookie Policy in our "
+);
+const privacyPolicyLink = document.createElement("a");
+privacyPolicyLink.innerText = "Privacy Policy";
+privacyPolicyLink.setAttribute("href", "https://google.com");
+
+cookieDescription.append(descriptionText, privacyPolicyLink);
+
+const cookieTitle = document.createElement("h5");
+cookieTitle.setAttribute("class", "cookie-heading");
+cookieTitle.innerText = "Cookies";
+
+const textWrapperDiv = document.createElement("div");
+textWrapperDiv.append(cookieTitle, cookieDescription);
 
 const cookieContainer = document.createElement("div");
-cookieContainer.setAttribute("class", "cookie-container");
-cookieContainer.append(cookieText, buttonGroup);
+cookieContainer.setAttribute("class", "flowappz--cookie-container");
+cookieContainer.append(textWrapperDiv, buttonGroup);
 
 document.querySelector("body").appendChild(cookieContainer);
 
