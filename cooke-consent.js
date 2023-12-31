@@ -1,5 +1,5 @@
 /**
- * VERSION: 1.1.0
+ * VERSION: 1.1.1
  */
 
 function attachCookieConsentStylesheet() {
@@ -15,15 +15,18 @@ function attachCookieConsentStylesheet() {
   .flowappz--cookie-container {
     position: fixed;
     bottom: 5vh;
-    width: 350px;
-    height: 250px;
+    width: 400px;
+    min-height: 250px;
+    height: fit-content;
     left: 35px;
     background-color: white;
     box-shadow: 0px 0px 20px 0px rgba(0, 0, 0, 0.1);
     padding: 53px 50px;
     display: flex;
+    gap: 50px;
     flex-direction: column;
     justify-content: space-between;
+    z-index: 99999;
   }
   
   .flowappz--cookie-container.hide {
