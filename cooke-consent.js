@@ -1,5 +1,5 @@
 /**
- * VERSION: 1.0.2
+ * VERSION: 1.1.0
  */
 
 function attachCookieConsentStylesheet() {
@@ -126,6 +126,10 @@ function attachCookieConsentStylesheet() {
 
     rejectButton.addEventListener("click", () => {
       cookieContainer.classList.add("hide");
+      document.cookie.split(";").map((c) => {
+        const cookieKey = c.split("=");
+        document.cookie = `${cookieKey}=; Path=/; Expires=${new Date().toISOString()}`;
+      });
     });
   } catch (err) {
     console.log("Error: ", err);
