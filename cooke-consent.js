@@ -4,62 +4,61 @@
 
 const sheet = new CSSStyleSheet();
 sheet.replaceSync(`
-.cookie-container {
-	display: flex;
-	align-content: center;
-	align-items: center;
-	padding: 1rem 2rem;
-	background: #007af7;
-	color: #fff;
-	position: fixed;
-	bottom:0;
-  left: 0;
-	font-size: 1rem;
-	gap: 2rem;
-	opacity: 1;
-	flex-wrap: wrap;
-  width: 100vw;
+.flowappz--cookie-container * {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: inherit;
 }
 
-.cookie-container.hide {
-	opacity: 0;
-	display: none;
-}
-
-.cookie-container a {
-	color: var(--white-color);
-}
-
-.cookie-container a:hover {
-	color: var(--hover-text);
-}
-
-.cookie-container .cookie-text {
-	flex: 8 768px;
-}
-
-.cookie-container .button-group {
+.flowappz--cookie-container {
+  position: fixed;
+  bottom: 5vh;
+  width: 350px;
+  height: 250px;
+  left: 35px;
+  background-color: white;
+  box-shadow: 0px 0px 20px 0px rgba(0, 0, 0, 0.1);
+  padding: 53px 50px;
   display: flex;
-  gap: 5px;
+  flex-direction: column;
+  justify-content: space-between;
 }
 
-.cookie-container .agree {
-	text-align: center;
+.flowappz--cookie-container .cookie-heading {
+  font-weight: bold;
+  color: black;
+  font-size: 26px;
+  line-height: 31.47px;
 }
 
-.agree button {
-	background: #fff;
-	color: #007af7;
-	border: none;
-	padding: 0.4rem 1.2rem;
-	cursor: pointer;
-	border-radius: 20px;
-	font-size: 1rem;
+.flowappz--cookie-container .cookie-description {
+  font-weight: 400;
+  color: black;
+  font-size: 16px;
+  line-height: 19.36px;
+  margin-top: 25px;
 }
 
-.agree button:hover {
-	background: #000;
-		color: #fff;
+.flowappz--cookie-container a {
+  color: black;
+}
+
+.flowappz--cookie-container .button-group {
+  display: flex;
+  gap: 20px;
+}
+
+.flowappz--cookie-container .button {
+  background: black;
+  color: white;
+  padding: 12px 28px;
+  border: none;
+  font-weight: bold;
+}
+.flowappz--cookie-container .button:last-child {
+  background-color: white;
+  color: black;
 }
 `);
 
