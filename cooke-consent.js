@@ -1,5 +1,5 @@
 /**
- * VERSION: 1.1.1
+ * VERSION: 1.1.2
  */
 
 function attachCookieConsentStylesheet() {
@@ -80,7 +80,9 @@ function attachCookieConsentStylesheet() {
     attachCookieConsentStylesheet();
     let privacyPolicyUrl = "#";
 
-    const res = await fetch(`http://localhost:3002/cookie-consent/privacy-policy?hostname=${window.location.hostname}`);
+    const res = await fetch(
+      `https://cookie-consent-production.up.railway.app/cookie-consent/privacy-policy?hostname=${window.location.hostname}`
+    );
     if (res.ok) {
       data = await res.json();
       privacyPolicyUrl = data.privacyPolicyUrl;
