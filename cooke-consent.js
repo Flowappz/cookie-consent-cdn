@@ -75,10 +75,52 @@ function attachCookieConsentStylesheet() {
   document.adoptedStyleSheets = [...sheets, sheet];
 }
 
+function createCookiePopup() {
+  const rejectButton = document.createElement("button");
+  rejectButton.setAttribute("class", "button");
+  rejectButton.id = "appz--cc-reject-btn";
+  rejectButton.innerText = "Reject all";
+
+  const agreeButton = document.createElement("button");
+  agreeButton.setAttribute("class", "button");
+  agreeButton.id = "appz--cc-accept-btn";
+  agreeButton.innerText = "Accept all";
+
+  const buttonGroup = document.createElement("div");
+  buttonGroup.setAttribute("class", "button-group");
+  buttonGroup.append(agreeButton, rejectButton);
+
+  const cookieDescription = document.createElement("p");
+  cookieDescription.setAttribute("class", "cookie-description");
+
+  const descriptionText = document.createTextNode(
+    "We use cookies to improve user experience. Choose what cookies you allow us to use. You can read more about our Cookie Policy in our "
+  );
+  const privacyPolicyLink = document.createElement("a");
+  privacyPolicyLink.innerText = "Privacy Policy";
+  privacyPolicyLink.setAttribute("href", privacyPolicyUrl);
+
+  cookieDescription.append(descriptionText, privacyPolicyLink);
+
+  const cookieTitle = document.createElement("h5");
+  cookieTitle.setAttribute("class", "cookie-heading");
+  cookieTitle.innerText = "Cookies";
+
+  const textWrapperDiv = document.createElement("div");
+  textWrapperDiv.append(cookieTitle, cookieDescription);
+
+  const cookieContainer = document.createElement("div");
+  cookieContainer.setAttribute("class", "flowappz--cookie-container");
+  cookieContainer.append(textWrapperDiv, buttonGroup);
+
+  document.querySelector("body").appendChild(cookieContainer);
+}
+
 (async () => {
   try {
     attachCookieConsentStylesheet();
     let privacyPolicyUrl = "#";
+    let cookiePopupHidePeriod = "";
 
     const res = await fetch(
       `https://cookie-consent-production.up.railway.app/cookie-consent/privacy-policy?hostname=${window.location.hostname}`
@@ -86,56 +128,27 @@ function attachCookieConsentStylesheet() {
     if (res.ok) {
       data = await res.json();
       privacyPolicyUrl = data.privacyPolicyUrl;
+      cookiePopupHidePeriod = data.cookiePopupHidePeriod;
     }
 
-    const rejectButton = document.createElement("button");
-    rejectButton.setAttribute("class", "button");
-    rejectButton.innerText = "Reject all";
+    const userDesignedPopup = document.getElementById("appz--cc-container");
+    if (!userDesignedPopup) createCookiePopup();
 
-    const agreeButton = document.createElement("button");
-    agreeButton.setAttribute("class", "button");
-    agreeButton.innerText = "Accept all";
-
-    const buttonGroup = document.createElement("div");
-    buttonGroup.setAttribute("class", "button-group");
-    buttonGroup.append(agreeButton, rejectButton);
-
-    const cookieDescription = document.createElement("p");
-    cookieDescription.setAttribute("class", "cookie-description");
-
-    const descriptionText = document.createTextNode(
-      "We use cookies to improve user experience. Choose what cookies you allow us to use. You can read more about our Cookie Policy in our "
-    );
-    const privacyPolicyLink = document.createElement("a");
-    privacyPolicyLink.innerText = "Privacy Policy";
-    privacyPolicyLink.setAttribute("href", privacyPolicyUrl);
-
-    cookieDescription.append(descriptionText, privacyPolicyLink);
-
-    const cookieTitle = document.createElement("h5");
-    cookieTitle.setAttribute("class", "cookie-heading");
-    cookieTitle.innerText = "Cookies";
-
-    const textWrapperDiv = document.createElement("div");
-    textWrapperDiv.append(cookieTitle, cookieDescription);
-
-    const cookieContainer = document.createElement("div");
-    cookieContainer.setAttribute("class", "flowappz--cookie-container");
-    cookieContainer.append(textWrapperDiv, buttonGroup);
-
-    document.querySelector("body").appendChild(cookieContainer);
-
+    const agreeButton = document.getElementById("appz--cc-accept-btn");
     agreeButton.addEventListener("click", () => {
       cookieContainer.classList.add("hide");
     });
 
-    rejectButton.addEventListener("click", () => {
-      cookieContainer.classList.add("hide");
-      document.cookie.split(";").map((c) => {
-        const cookieKey = c.split("=");
-        document.cookie = `${cookieKey}=; Path=/; Expires=${new Date().toISOString()}`;
+    const rejectButton = document.getElementById("appz--cc-reject-btn");
+    if (rejectButton) {
+      rejectButton.addEventListener("click", () => {
+        cookieContainer.classList.add("hide");
+        document.cookie.split(";").map((c) => {
+          const cookieKey = c.split("=");
+          document.cookie = `${cookieKey}=; Path=/; Expires=${new Date().toISOString()}`;
+        });
       });
-    });
+    }
   } catch (err) {
     console.log("Error: ", err);
   }
