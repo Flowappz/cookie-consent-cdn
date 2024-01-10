@@ -1,5 +1,5 @@
 /**
- * VERSION: 1.1.4
+ * VERSION: 1.1.5
  */
 
 function attachCookieConsentStylesheet() {
@@ -136,13 +136,12 @@ function setCookieToHidePopup(hidePeriod) {
 
   const today = new Date();
   const expireyDate = new Date(today.setDate(today.getDate() + numberOfDays));
-  document.cookie = `hidePopup=true; Path=/; Expires=${expireyDate.toISOString()}`;
+  document.cookie = `hidePopup=true; Path=/; Expires=${expireyDate.toUTCString()}`;
 }
 
 (async () => {
   try {
     if (!shouldShowCookiePopup()) {
-      alert("not showing...");
       return;
     }
 
