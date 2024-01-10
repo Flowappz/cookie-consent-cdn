@@ -75,7 +75,7 @@ function attachCookieConsentStylesheet() {
   document.adoptedStyleSheets = [...sheets, sheet];
 }
 
-function createCookiePopup() {
+function createCookiePopup(privacyPolicyUrl) {
   const rejectButton = document.createElement("button");
   rejectButton.setAttribute("class", "button");
   rejectButton.id = "appz--cc-reject-btn";
@@ -112,15 +112,19 @@ function createCookiePopup() {
   const cookieContainer = document.createElement("div");
   cookieContainer.setAttribute("class", "flowappz--cookie-container");
   cookieContainer.append(textWrapperDiv, buttonGroup);
+  cookieContainer.style.zIndex = "99999";
+  cookieContainer.id = "appz--cc-container";
 
   document.querySelector("body").appendChild(cookieContainer);
+
+  return cookieContainer;
 }
 
 (async () => {
   try {
     attachCookieConsentStylesheet();
     let privacyPolicyUrl = "#";
-    let cookiePopupHidePeriod = "";
+    let cookiePopupHidePeriod = "FOREVER";
 
     const res = await fetch(
       `https://cookie-consent-production.up.railway.app/cookie-consent/privacy-policy?hostname=${window.location.hostname}`
@@ -131,18 +135,22 @@ function createCookiePopup() {
       cookiePopupHidePeriod = data.cookiePopupHidePeriod;
     }
 
-    const userDesignedPopup = document.getElementById("appz--cc-container");
-    if (!userDesignedPopup) createCookiePopup();
+    let cookiePopup = document.getElementById("appz--cc-container");
+    if (!cookiePopup) cookiePopup = createCookiePopup(privacyPolicyUrl);
+    else {
+      cookiePopup.style.display = "initial";
+      cookiePopup.style.zIndex = "99999";
+    }
 
     const agreeButton = document.getElementById("appz--cc-accept-btn");
     agreeButton.addEventListener("click", () => {
-      cookieContainer.classList.add("hide");
+      cookiePopup.style.display = "none";
     });
 
     const rejectButton = document.getElementById("appz--cc-reject-btn");
     if (rejectButton) {
       rejectButton.addEventListener("click", () => {
-        cookieContainer.classList.add("hide");
+        cookiePopup.style.display = "none";
         document.cookie.split(";").map((c) => {
           const cookieKey = c.split("=");
           document.cookie = `${cookieKey}=; Path=/; Expires=${new Date().toISOString()}`;
