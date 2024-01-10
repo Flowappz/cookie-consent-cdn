@@ -1,5 +1,5 @@
 /**
- * VERSION: 1.1.3
+ * VERSION: 1.1.4
  */
 
 function attachCookieConsentStylesheet() {
@@ -120,14 +120,38 @@ function createCookiePopup(privacyPolicyUrl) {
   return cookieContainer;
 }
 
+function shouldShowCookiePopup() {
+  const cookie = document.cookie.split(";").find((c) => c.includes("hidePopup"));
+  if (cookie) return false;
+  return true;
+}
+
+function setCookieToHidePopup(hidePeriod) {
+  let numberOfDays = 30;
+
+  if (hidePeriod === "FOREVER") numberOfDays = 10 * 365;
+  else if (hidePeriod === "ONE_YEAR") numberOfDays = 365;
+  else if (hidePeriod === "SIX_MONTH") numberOfDays = 30 * 6;
+  else if (hidePeriod === "THREE_MONTH") numberOfDays = 30 * 3;
+
+  const today = new Date();
+  const expireyDate = new Date(today.setDate(today.getDate() + numberOfDays));
+  document.cookie = `hidePopup=true; Path=/; Expires=${expireyDate.toISOString()}`;
+}
+
 (async () => {
   try {
+    if (!shouldShowCookiePopup()) {
+      alert("not showing...");
+      return;
+    }
+
     attachCookieConsentStylesheet();
     let privacyPolicyUrl = "#";
     let cookiePopupHidePeriod = "FOREVER";
 
     const res = await fetch(
-      `https://cookie-consent-production.up.railway.app/cookie-consent/privacy-policy?hostname=${window.location.hostname}`
+      `https://cookie-consent-production.up.railway.app/cookie-consent/hostname?hostname=${window.location.hostname}`
     );
     if (res.ok) {
       data = await res.json();
@@ -145,16 +169,21 @@ function createCookiePopup(privacyPolicyUrl) {
     const agreeButton = document.getElementById("appz--cc-accept-btn");
     agreeButton.addEventListener("click", () => {
       cookiePopup.style.display = "none";
+      setCookieToHidePopup(cookiePopupHidePeriod);
     });
 
     const rejectButton = document.getElementById("appz--cc-reject-btn");
     if (rejectButton) {
       rejectButton.addEventListener("click", () => {
         cookiePopup.style.display = "none";
-        document.cookie.split(";").map((c) => {
-          const cookieKey = c.split("=");
-          document.cookie = `${cookieKey}=; Path=/; Expires=${new Date().toISOString()}`;
-        });
+        setCookieToHidePopup(cookiePopupHidePeriod);
+        document.cookie
+          .split(";")
+          .filter((c) => c.split("=")[0] !== "hidePopup")
+          .map((c) => {
+            const cookieKey = c.split("=");
+            document.cookie = `${cookieKey}=; Path=/; Expires=${new Date().toISOString()}`;
+          });
       });
     }
   } catch (err) {
