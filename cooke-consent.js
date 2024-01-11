@@ -1,5 +1,5 @@
 /**
- * VERSION: 1.1.5
+ * VERSION: 1.1.6
  */
 
 function attachCookieConsentStylesheet() {
@@ -166,6 +166,7 @@ function setCookieToHidePopup(hidePeriod) {
     }
 
     const agreeButton = document.getElementById("appz--cc-accept-btn");
+    agreeButton.tabIndex = 0;
     agreeButton.addEventListener("click", () => {
       cookiePopup.style.display = "none";
       setCookieToHidePopup(cookiePopupHidePeriod);
@@ -173,6 +174,7 @@ function setCookieToHidePopup(hidePeriod) {
 
     const rejectButton = document.getElementById("appz--cc-reject-btn");
     if (rejectButton) {
+      rejectButton.tabIndex = 0;
       rejectButton.addEventListener("click", () => {
         cookiePopup.style.display = "none";
         setCookieToHidePopup(cookiePopupHidePeriod);
