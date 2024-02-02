@@ -1,5 +1,5 @@
 /**
- * VERSION: 1.1.7
+ * VERSION: 1.1.8
  */
 
 function shouldShowCookiePopup() {
@@ -44,7 +44,7 @@ window.addEventListener("DOMContentLoaded", async () => {
     let cookiePopupHidePeriod = "FOREVER";
 
     const res = await fetch(
-      `https://cookie-consent-production.up.railway.app/cookie-consent/hostname?hostname=${window.location.hostname}`
+      `https://cookie-consent-production.up.railway.app/api/cookie-consent/hostname?hostname=${window.location.hostname}`
     );
     if (res.ok) {
       data = await res.json();
