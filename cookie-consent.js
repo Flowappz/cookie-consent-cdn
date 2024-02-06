@@ -1,5 +1,5 @@
 /**
- * VERSION: 1.1.10
+ * VERSION: 1.1.11
  */
 
 function shouldShowCookiePopup() {
@@ -74,10 +74,9 @@ window.addEventListener("DOMContentLoaded", async () => {
         setCookieToHidePopup(cookiePopupHidePeriod);
         document.cookie
           .split(";")
-          .filter((c) => c.split("=")[0] !== "hidePopup")
+          .filter((c) => c.split("=")[0].trim() !== "hidePopup")
           .map((c) => {
             const cookieKey = c.split("=")[0];
-            console.log("rejecting cookie: ", cookieKey);
             document.cookie = `${cookieKey}=; Path=/; Expires=${new Date().toISOString()}`;
             document.cookie = `${cookieKey}=; Path=/; Expires=${new Date().toISOString()}; domain=.${
               window.location.host
