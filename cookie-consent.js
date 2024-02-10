@@ -1,5 +1,5 @@
 /**
- * VERSION: 1.1.12
+ * VERSION: 1.1.13
  */
 
 function shouldShowCookiePopup() {
@@ -48,6 +48,9 @@ window.addEventListener("DOMContentLoaded", async () => {
     );
     if (res.ok) {
       data = await res.json();
+
+      if (!data.cookiePopupEnabled) return;
+
       privacyPolicyUrl = data.privacyPolicyUrl;
       cookiePopupHidePeriod = data.cookiePopupHidePeriod;
     }
