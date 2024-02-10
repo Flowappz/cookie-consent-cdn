@@ -1,5 +1,5 @@
 /**
- * VERSION: 1.1.13
+ * VERSION: 1.1.14
  */
 
 function shouldShowCookiePopup() {
@@ -31,6 +31,26 @@ const hidePopupByDefault = () => {
   `);
 
   document.adoptedStyleSheets.push(styleSheet);
+};
+
+const deleteCookiesUsingCookieStore = async () => {
+  const cookies = await cookieStore.getAll();
+
+  for (let cookie of cookies) {
+    const { name, domain, path } = cookie;
+    await cookieStore.delete({ name, domain, path });
+  }
+};
+
+const expireCookies = () => {
+  document.cookie
+    .split(";")
+    .filter((c) => c.split("=")[0].trim() !== "hidePopup")
+    .map((c) => {
+      const cookieKey = c.split("=")[0];
+      document.cookie = `${cookieKey}=; Path=/; Expires=${new Date().toUTCString()}`;
+      document.cookie = `${cookieKey}=; Path=/; Expires=${new Date().toUTCString()}; domain=.${window.location.host}`;
+    });
 };
 
 hidePopupByDefault();
@@ -72,19 +92,16 @@ window.addEventListener("DOMContentLoaded", async () => {
     const rejectButton = document.getElementById("flowappz-cookie-consent-reject");
     if (rejectButton) {
       rejectButton.tabIndex = 0;
-      rejectButton.addEventListener("click", () => {
-        cookiePopup.style.display = "none";
-        setCookieToHidePopup(cookiePopupHidePeriod);
-        document.cookie
-          .split(";")
-          .filter((c) => c.split("=")[0].trim() !== "hidePopup")
-          .map((c) => {
-            const cookieKey = c.split("=")[0];
-            document.cookie = `${cookieKey}=; Path=/; Expires=${new Date().toUTCString()}`;
-            document.cookie = `${cookieKey}=; Path=/; Expires=${new Date().toUTCString()}; domain=.${
-              window.location.host
-            }`;
-          });
+      rejectButton.addEventListener("click", async () => {
+        try {
+          cookiePopup.style.display = "none";
+          setCookieToHidePopup(cookiePopupHidePeriod);
+
+          await deleteCookiesUsingCookieStore();
+        } catch (err) {
+          console.log("Cookie consent - CookieStore API not supported!");
+          expireCookies();
+        }
       });
     }
   } catch (err) {
