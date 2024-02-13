@@ -1,5 +1,5 @@
 /**
- * VERSION: 1.1.14
+ * VERSION: 1.1.15
  */
 
 function shouldShowCookiePopup() {
@@ -38,7 +38,7 @@ const deleteCookiesUsingCookieStore = async () => {
 
   for (let cookie of cookies) {
     const { name, domain, path } = cookie;
-    await cookieStore.delete({ name, domain, path });
+    if (name.trim() !== "hidePopup") await cookieStore.delete({ name, domain, path });
   }
 };
 
