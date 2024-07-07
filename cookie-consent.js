@@ -62,8 +62,7 @@ const attachCssStyle = () => {
     }
 
     .cookie-consent-switch-root[checked] .cookie-consent-slider {
-      right: 5px;
-      left: auto;
+      left: calc(100% - 35px);
     }
   `);
 
