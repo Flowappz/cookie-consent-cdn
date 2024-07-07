@@ -53,7 +53,25 @@ const expireCookies = () => {
     });
 };
 
+const attachCssStyle = () => {
+  const styleSheet = new CSSStyleSheet();
+
+  styleSheet.replaceSync(`
+    .cookie-consent-switch-root[checked] {
+      background-color: black;
+    }
+
+    .cookie-consent-switch-root[checked] .cookie-consent-slider {
+      right: 5px;
+      left: auto;
+    }
+  `);
+
+  document.adoptedStyleSheets.push(styleSheet);
+};
+
 hidePopupByDefault();
+attachCssStyle();
 
 window.addEventListener("DOMContentLoaded", async () => {
   try {
