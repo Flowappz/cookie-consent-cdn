@@ -73,32 +73,37 @@ const attachCssStyle = () => {
 hidePopupByDefault();
 attachCssStyle();
 
+
+let cookiePopupHidePeriod = "FOREVER";
+
+async function loadCookiePopup() {
+  if (!shouldShowCookiePopup()) {
+    return;
+  }
+
+  const res = await fetch(
+    `https://cookie-consent-production.up.railway.app/api/cookie-consent/hostname?hostname=${window.location.hostname}`
+  );
+  if (res.ok) {
+    data = await res.json();
+
+    if (!data.cookiePopupEnabled) return;
+
+    privacyPolicyUrl = data.privacyPolicyUrl;
+    cookiePopupHidePeriod = data.cookiePopupHidePeriod;
+  }
+
+  let cookiePopup = document.getElementById("flowappz-cookie-consent");
+  if (!cookiePopup) console.error("Cookie popup is enabled but can not find the container!");
+  else {
+    cookiePopup.style.display = "block";
+    cookiePopup.style.zIndex = "99999";
+  }
+}
+
 window.addEventListener("DOMContentLoaded", async () => {
   try {
-    if (!shouldShowCookiePopup()) {
-      return;
-    }
-
-    let cookiePopupHidePeriod = "FOREVER";
-
-    const res = await fetch(
-      `https://cookie-consent-production.up.railway.app/api/cookie-consent/hostname?hostname=${window.location.hostname}`
-    );
-    if (res.ok) {
-      data = await res.json();
-
-      if (!data.cookiePopupEnabled) return;
-
-      privacyPolicyUrl = data.privacyPolicyUrl;
-      cookiePopupHidePeriod = data.cookiePopupHidePeriod;
-    }
-
-    let cookiePopup = document.getElementById("flowappz-cookie-consent");
-    if (!cookiePopup) console.error("Cookie popup is enabled but can not find the container!");
-    else {
-      cookiePopup.style.display = "block";
-      cookiePopup.style.zIndex = "99999";
-    }
+    await loadCookiePopup();
 
     const agreeButton = document.getElementById("flowappz-cookie-consent-approve");
     agreeButton.tabIndex = 0;
