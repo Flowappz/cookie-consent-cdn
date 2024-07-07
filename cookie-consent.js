@@ -76,10 +76,24 @@ attachCssStyle();
 
 let cookiePopupHidePeriod = "FOREVER";
 
+function makeCookieTogglersInteractive() {
+  const togglers = document.querySelectorAll(".cookie-consent-switch-root");
+
+  togglers.forEach((toggler) => {
+    toggler.addEventListener("click", () => {
+      const isChecked = toggler.getAttribute("checked");
+      if (isChecked === null) toggler.setAttribute("checked", "true");
+      else toggler.removeAttribute("checked");
+    });
+  });
+}
+
 async function loadCookiePopup() {
   if (!shouldShowCookiePopup()) {
     return;
   }
+
+  makeCookieTogglersInteractive();
 
   const res = await fetch(
     `https://cookie-consent-production.up.railway.app/api/cookie-consent/hostname?hostname=${window.location.hostname}`
