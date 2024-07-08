@@ -141,12 +141,15 @@ async function loadCookiePopup() {
 
 function initializeGoogleTagCookieWithDefaultConfig() {
   try {
+    const userPreferenceCookie = document.cookie.split(";").find((c) => c.startsWith("cookiePreferences"));
+    const savedUserPreferences = userPreferenceCookie ? JSON.parse(userPreferenceCookie.split("=")?.[1]) : null;
+
     gtag("consent", "default", {
-      ad_storage: "denied",
-      ad_user_data: "denied",
-      ad_personalization: "denied",
-      analytics_storage: "denied",
-      wait_for_update: 30000,
+      ad_storage: savedUserPreferences?.marketing ? "granted" : "denied",
+      ad_user_data: savedUserPreferences?.marketing ? "granted" : "denied",
+      ad_personalization: savedUserPreferences?.marketing ? "granted" : "denied",
+      analytics_storage: savedUserPreferences?.statistical ? "granted" : "denied",
+      wait_for_update: savedUserPreferences ? 0 : 20000,
     });
   } catch (err) {
     console.log(`Error initializing Google tag with default state`, err);
