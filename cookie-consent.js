@@ -21,10 +21,7 @@ window.addEventListener("DOMContentLoaded", async () => {
 
     const agreeButton = document.getElementById("flowappz-cookie-consent-approve");
     agreeButton.tabIndex = 0;
-    agreeButton.addEventListener("click", () => {
-      cookiePopup.style.display = "none";
-      setCookieToHidePopup(cookiePopupHidePeriod);
-    });
+    agreeButton.addEventListener("click", handleCookieAccept);
 
     const rejectButton = document.getElementById("flowappz-cookie-consent-reject");
     if (rejectButton) {
@@ -203,6 +200,21 @@ function handleCookieReject() {
 
   for (let key in cookiePerferences) {
     cookiePerferences[key] = false;
+  }
+
+  storeCookiePreferences();
+  updateGoogleTagCookieConfig();
+}
+
+function handleCookieAccept() {
+  cookiePopup.style.display = "none";
+
+  const cookiePreferenceTogglers = document.querySelectorAll(".cookie-consent-switch-root");
+
+  for (let toggler of cookiePreferenceTogglers) {
+    const key = toggler.getAttribute("key");
+    const checked = toggler.getAttribute("checked") !== null;
+    cookiePerferences[key] = checked;
   }
 
   storeCookiePreferences();
