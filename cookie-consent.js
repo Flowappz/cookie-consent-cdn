@@ -2,6 +2,42 @@
  * VERSION: 1.1.15
  */
 
+let cookiePopupHidePeriod = "FOREVER";
+
+hidePopupByDefault();
+attachCssStyle();
+
+window.addEventListener("DOMContentLoaded", async () => {
+  try {
+    await loadCookiePopup();
+
+    const agreeButton = document.getElementById("flowappz-cookie-consent-approve");
+    agreeButton.tabIndex = 0;
+    agreeButton.addEventListener("click", () => {
+      cookiePopup.style.display = "none";
+      setCookieToHidePopup(cookiePopupHidePeriod);
+    });
+
+    const rejectButton = document.getElementById("flowappz-cookie-consent-reject");
+    if (rejectButton) {
+      rejectButton.tabIndex = 0;
+      rejectButton.addEventListener("click", async () => {
+        try {
+          cookiePopup.style.display = "none";
+          setCookieToHidePopup(cookiePopupHidePeriod);
+
+          await deleteCookiesUsingCookieStore();
+        } catch (err) {
+          console.log("Cookie consent - CookieStore API not supported!");
+          expireCookies();
+        }
+      });
+    }
+  } catch (err) {
+    console.log("Error: ", err);
+  }
+});
+
 function shouldShowCookiePopup() {
   const cookie = document.cookie.split(";").find((c) => c.includes("hidePopup"));
   if (cookie) return false;
@@ -21,7 +57,7 @@ function setCookieToHidePopup(hidePeriod) {
   document.cookie = `hidePopup=true; Path=/; Expires=${expireyDate.toUTCString()}`;
 }
 
-const hidePopupByDefault = () => {
+function hidePopupByDefault() {
   const styleSheet = new CSSStyleSheet();
 
   styleSheet.replaceSync(`
@@ -31,18 +67,18 @@ const hidePopupByDefault = () => {
   `);
 
   document.adoptedStyleSheets.push(styleSheet);
-};
+}
 
-const deleteCookiesUsingCookieStore = async () => {
+async function deleteCookiesUsingCookieStore() {
   const cookies = await cookieStore.getAll();
 
   for (let cookie of cookies) {
     const { name, domain, path } = cookie;
     if (name.trim() !== "hidePopup") await cookieStore.delete({ name, domain, path });
   }
-};
+}
 
-const expireCookies = () => {
+function expireCookies() {
   document.cookie
     .split(";")
     .filter((c) => c.split("=")[0].trim() !== "hidePopup")
@@ -51,9 +87,9 @@ const expireCookies = () => {
       document.cookie = `${cookieKey}=; Path=/; Expires=${new Date().toUTCString()}`;
       document.cookie = `${cookieKey}=; Path=/; Expires=${new Date().toUTCString()}; domain=.${window.location.host}`;
     });
-};
+}
 
-const attachCssStyle = () => {
+function attachCssStyle() {
   const styleSheet = new CSSStyleSheet();
 
   styleSheet.replaceSync(`
@@ -67,13 +103,7 @@ const attachCssStyle = () => {
   `);
 
   document.adoptedStyleSheets.push(styleSheet);
-};
-
-hidePopupByDefault();
-attachCssStyle();
-
-
-let cookiePopupHidePeriod = "FOREVER";
+}
 
 function makeCookieTogglersInteractive() {
   const togglers = document.querySelectorAll(".cookie-consent-switch-root");
@@ -113,34 +143,3 @@ async function loadCookiePopup() {
     cookiePopup.style.zIndex = "99999";
   }
 }
-
-window.addEventListener("DOMContentLoaded", async () => {
-  try {
-    await loadCookiePopup();
-
-    const agreeButton = document.getElementById("flowappz-cookie-consent-approve");
-    agreeButton.tabIndex = 0;
-    agreeButton.addEventListener("click", () => {
-      cookiePopup.style.display = "none";
-      setCookieToHidePopup(cookiePopupHidePeriod);
-    });
-
-    const rejectButton = document.getElementById("flowappz-cookie-consent-reject");
-    if (rejectButton) {
-      rejectButton.tabIndex = 0;
-      rejectButton.addEventListener("click", async () => {
-        try {
-          cookiePopup.style.display = "none";
-          setCookieToHidePopup(cookiePopupHidePeriod);
-
-          await deleteCookiesUsingCookieStore();
-        } catch (err) {
-          console.log("Cookie consent - CookieStore API not supported!");
-          expireCookies();
-        }
-      });
-    }
-  } catch (err) {
-    console.log("Error: ", err);
-  }
-});
