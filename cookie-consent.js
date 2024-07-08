@@ -15,6 +15,7 @@ attachCssStyle();
 
 window.addEventListener("DOMContentLoaded", async () => {
   try {
+    initializeGoogleTagCookieWithDefaultConfig();
     await loadCookiePopup();
 
     const agreeButton = document.getElementById("flowappz-cookie-consent-approve");
@@ -147,5 +148,19 @@ async function loadCookiePopup() {
   else {
     cookiePopup.style.display = "block";
     cookiePopup.style.zIndex = "99999";
+  }
+}
+
+function initializeGoogleTagCookieWithDefaultConfig() {
+  try {
+    gtag("consent", "default", {
+      ad_storage: "denied",
+      ad_user_data: "denied",
+      ad_personalization: "denied",
+      analytics_storage: "denied",
+      wait_for_update: 30000,
+    });
+  } catch (err) {
+    console.log(`Error initializing Google tag with default state`, err);
   }
 }
