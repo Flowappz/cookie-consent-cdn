@@ -180,3 +180,29 @@ function updateGoogleTagCookieConfig() {
     console.log(`Error updating Google tag config`, err);
   }
 }
+
+function cookiePreferencesExpireyDate() {
+  let numberOfDays = 30;
+
+  if (cookiePopupHidePeriod === "FOREVER") numberOfDays = 10 * 365;
+  else if (cookiePopupHidePeriod === "ONE_YEAR") numberOfDays = 365;
+  else if (cookiePopupHidePeriod === "SIX_MONTH") numberOfDays = 30 * 6;
+  else if (cookiePopupHidePeriod === "THREE_MONTH") numberOfDays = 30 * 3;
+
+  const today = new Date();
+  const expireyDate = new Date(today.setDate(today.getDate() + numberOfDays));
+
+  return expireyDate;
+}
+
+function storeCookiePreferences() {
+  const expireyDate = cookiePreferencesExpireyDate();
+
+  for (let key in cookiePerferences) {
+    document.cookie = `cookiePreferences.${key}=${
+      cookiePerferences[key]
+    }; Path=/; Expires=${expireyDate.toUTCString()}`;
+  }
+
+  document.cookie = `hidePopup=true; Path=/; Expires=${expireyDate.toUTCString()}`;
+}
