@@ -3,6 +3,12 @@
  */
 
 let cookiePopupHidePeriod = "FOREVER";
+let cookiePerferences = {
+  strictlyNecessary: true,
+  functional: true,
+  statistical: true,
+  marketing: true,
+};
 
 hidePopupByDefault();
 attachCssStyle();
