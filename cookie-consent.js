@@ -1,5 +1,5 @@
 /**
- * VERSION: 1.2.0
+ * VERSION: 1.2.1
  */
 
 let cookiePopup = null;
@@ -56,7 +56,7 @@ function hidePopupByDefault() {
   const styleSheet = new CSSStyleSheet();
 
   styleSheet.replaceSync(`
-    .flowappz-cookie-consent {
+    #flowappz-cookie-consent {
       display: none;
     }
   `);
