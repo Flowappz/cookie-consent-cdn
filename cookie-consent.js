@@ -1,5 +1,5 @@
 /**
- * VERSION: 1.2.1
+ * VERSION: 1.2.2
  */
 
 let cookiePopup = null;
@@ -134,7 +134,7 @@ async function loadCookiePopup() {
   cookiePopup = document.getElementById("flowappz-cookie-consent");
   if (!cookiePopup) console.error("Cookie popup is enabled but can not find the container!");
   else {
-    cookiePopup.style.display = "block";
+    cookiePopup.style.display = "flex";
     cookiePopup.style.zIndex = "99999";
   }
 }
