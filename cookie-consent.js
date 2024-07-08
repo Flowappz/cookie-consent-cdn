@@ -164,3 +164,19 @@ function initializeGoogleTagCookieWithDefaultConfig() {
     console.log(`Error initializing Google tag with default state`, err);
   }
 }
+
+function updateGoogleTagCookieConfig() {
+  try {
+    const config = {
+      ad_storage: cookiePerferences.marketing ? "granted" : "denied",
+      ad_user_data: cookiePerferences.marketing ? "granted" : "denied",
+      ad_personalization: cookiePerferences.marketing ? "granted" : "denied",
+
+      analytics_storage: cookiePerferences.statistical ? "granted" : "denied",
+    };
+
+    gtag("consent", "update", config);
+  } catch (err) {
+    console.log(`Error updating Google tag config`, err);
+  }
+}
