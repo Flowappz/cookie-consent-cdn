@@ -186,12 +186,9 @@ function cookiePreferencesExpireyDate() {
 function storeCookiePreferences() {
   const expireyDate = cookiePreferencesExpireyDate();
 
-  for (let key in cookiePerferences) {
-    document.cookie = `cookiePreferences.${key}=${
-      cookiePerferences[key]
-    }; Path=/; Expires=${expireyDate.toUTCString()}`;
-  }
-
+  document.cookie = `cookiePreferences=${JSON.stringify(
+    cookiePerferences
+  )}; Path=/; Expires=${expireyDate.toUTCString()}`;
   document.cookie = `hidePopup=true; Path=/; Expires=${expireyDate.toUTCString()}`;
 }
 
