@@ -2,6 +2,7 @@
  * VERSION: 1.1.15
  */
 
+let cookiePopup = null;
 let cookiePopupHidePeriod = "FOREVER";
 let cookiePerferences = {
   strictlyNecessary: true,
@@ -28,17 +29,7 @@ window.addEventListener("DOMContentLoaded", async () => {
     const rejectButton = document.getElementById("flowappz-cookie-consent-reject");
     if (rejectButton) {
       rejectButton.tabIndex = 0;
-      rejectButton.addEventListener("click", async () => {
-        try {
-          cookiePopup.style.display = "none";
-          setCookieToHidePopup(cookiePopupHidePeriod);
-
-          await deleteCookiesUsingCookieStore();
-        } catch (err) {
-          console.log("Cookie consent - CookieStore API not supported!");
-          expireCookies();
-        }
-      });
+      rejectButton.addEventListener("click", handleCookieReject);
     }
   } catch (err) {
     console.log("Error: ", err);
@@ -143,7 +134,7 @@ async function loadCookiePopup() {
     cookiePopupHidePeriod = data.cookiePopupHidePeriod;
   }
 
-  let cookiePopup = document.getElementById("flowappz-cookie-consent");
+  cookiePopup = document.getElementById("flowappz-cookie-consent");
   if (!cookiePopup) console.error("Cookie popup is enabled but can not find the container!");
   else {
     cookiePopup.style.display = "block";
@@ -205,4 +196,15 @@ function storeCookiePreferences() {
   }
 
   document.cookie = `hidePopup=true; Path=/; Expires=${expireyDate.toUTCString()}`;
+}
+
+function handleCookieReject() {
+  cookiePopup.style.display = "none";
+
+  for (let key in cookiePerferences) {
+    cookiePerferences[key] = false;
+  }
+
+  storeCookiePreferences();
+  updateGoogleTagCookieConfig();
 }
