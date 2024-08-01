@@ -105,9 +105,15 @@ function makeCookieTogglersInteractive() {
 
   togglers.forEach((toggler) => {
     toggler.addEventListener("click", () => {
+      const key = toggler.getAttribute("key");
       const isChecked = toggler.getAttribute("checked");
-      if (isChecked === null) toggler.setAttribute("checked", "true");
-      else toggler.removeAttribute("checked");
+      if (isChecked === null) {
+        toggler.setAttribute("checked", "true");
+        cookiePerferences[key] = true;
+      } else {
+        toggler.removeAttribute("checked");
+        cookiePerferences[key] = false;
+      }
     });
   });
 }
