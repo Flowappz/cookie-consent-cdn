@@ -215,14 +215,6 @@ function handleCookieReject() {
 function handleCookieAccept() {
   cookiePopup.style.display = "none";
 
-  const cookiePreferenceTogglers = document.querySelectorAll(".cookie-consent-switch-root");
-
-  for (let toggler of cookiePreferenceTogglers) {
-    const key = toggler.getAttribute("key");
-    const checked = toggler.getAttribute("checked") !== null;
-    cookiePerferences[key] = checked;
-  }
-
   storeCookiePreferences();
   updateGoogleTagCookieConfig();
 }
