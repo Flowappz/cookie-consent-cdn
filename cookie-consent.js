@@ -125,9 +125,8 @@ async function loadCookiePopup() {
 
   makeCookieTogglersInteractive();
 
-  const res = await fetch(
-    `https://cookie-consent-production.up.railway.app/api/cookie-consent/hostname?hostname=${window.location.hostname}`
-  );
+  const siteId = document.querySelector("html").getAttribute("data-wf-site");
+  const res = await fetch(`https://cookie-consent-production.up.railway.app/api/cookie-consent/${siteId}`);
   if (res.ok) {
     data = await res.json();
 
