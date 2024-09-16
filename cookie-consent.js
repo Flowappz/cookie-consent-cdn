@@ -1,5 +1,5 @@
 /**
- * VERSION: 1.2.3
+ * VERSION: 1.2.4
  */
 
 let cookiePopup = null;
@@ -11,27 +11,112 @@ let cookiePerferences = {
   marketing: true,
 };
 
+/** @type {StyleSheet} */
+let styleSheetToHidePopup = null;
+
 hidePopupByDefault();
-attachCssStyle();
 
-window.addEventListener("DOMContentLoaded", async () => {
+window.addEventListener("DOMContentLoaded", async function initializeCookieConsentApp() {
+  const siteId = document.querySelector("html").getAttribute("data-wf-site");
+  if (await hasValidLicenseKey(siteId)) makeTheCookieConsentInteractive(siteId);
+  else enableFreeFunctionality();
+});
+
+// window.addEventListener("DOMContentLoaded", async () => {
+//   try {
+//     initializeGoogleTagCookieWithDefaultConfig();
+//     await loadCookiePopup();
+
+//     const agreeButton = document.getElementById("flowappz-cookie-consent-approve");
+//     agreeButton.tabIndex = 0;
+//     agreeButton.addEventListener("click", handleCookieAccept);
+
+//     const rejectButton = document.getElementById("flowappz-cookie-consent-reject");
+//     if (rejectButton) {
+//       rejectButton.tabIndex = 0;
+//       rejectButton.addEventListener("click", handleCookieReject);
+//     }
+//   } catch (err) {
+//     console.log("Error: ", err);
+//   }
+// });
+
+async function hasValidLicenseKey(siteId) {
+  const res = await fetch(
+    `https://cache-service-staging.up.railway.app/api/license?siteId=${siteId}&appName=cookie-consent`
+  );
+  if (res.ok) {
+    data = await res.json();
+
+    return data.active;
+  }
+  return false;
+}
+
+async function makeTheCookieConsentInteractive(siteId) {
   try {
-    initializeGoogleTagCookieWithDefaultConfig();
-    await loadCookiePopup();
-
-    const agreeButton = document.getElementById("flowappz-cookie-consent-approve");
-    agreeButton.tabIndex = 0;
-    agreeButton.addEventListener("click", handleCookieAccept);
-
-    const rejectButton = document.getElementById("flowappz-cookie-consent-reject");
-    if (rejectButton) {
-      rejectButton.tabIndex = 0;
-      rejectButton.addEventListener("click", handleCookieReject);
-    }
+    makeTheUIInteractive();
+    connectToGoogleAnalytics(siteId);
   } catch (err) {
     console.log("Error: ", err);
   }
-});
+}
+
+function enableFreeFunctionality() {
+  if (!shouldShowCookiePopup()) return;
+
+  styleSheetToHidePopup.disabled = true;
+
+  const agreeButton = document.querySelector(`[flowappz-cookie-command="accept-all"]`);
+  agreeButton.addEventListener("click", () => {
+    styleSheetToHidePopup.disabled = false;
+    storeCookiePreferences();
+  });
+
+  const rejectButton = document.querySelector(`[flowappz-cookie-command="reject-all"]`);
+  rejectButton.addEventListener("click", () => () => {
+    styleSheetToHidePopup.disabled = false;
+    storeCookiePreferences();
+  });
+}
+
+function makeTheUIInteractive() {
+  if (!shouldShowCookiePopup()) return;
+
+  preventDefaultFormSubmit();
+  styleSheetToHidePopup.disabled = true;
+
+  const acceptAllButtons = document.querySelectorAll(`[flowappz-cookie-command="accept-all"]`);
+  for (let acceptAllButton of acceptAllButtons) {
+    acceptAllButton.addEventListener("click", handleAcceptAll);
+  }
+
+  const rejectAllButtons = document.querySelectorAll(`[flowappz-cookie-command="reject-all"]`);
+  for (let rejectAllButton of rejectAllButtons) {
+    rejectAllButton.addEventListener("click", handleRejectAll);
+  }
+
+  const acceptSelectedButton = document.querySelector(`[flowappz-cookie-command="accept-selected"]`);
+  acceptSelectedButton.addEventListener("click", handleCookieAccept);
+
+  /** @type {HTMLDivElement} */
+  const settingsUI = document.querySelector(`[flowappz-cookie-settings-wrapper="true"]`);
+  settingsUI.style.display = "none";
+  const manageSettingsButtons = document.querySelectorAll(`[flowappz-cookie-command="manage-settings"]`);
+  for (let settingsButton of manageSettingsButtons) {
+    settingsButton.addEventListener("click", () => (settingsUI.style.display = "flex"));
+  }
+
+  const closeSettingsButton = document.querySelector(`[flowappz-cookie-command="close-settings"]`);
+  closeSettingsButton.addEventListener("click", () => (settingsUI.style.display = "none"));
+
+  makeCookieTogglersInteractive();
+}
+
+function preventDefaultFormSubmit() {
+  const elements = document.querySelectorAll(`[flowappz-cookie-settings-wrapper="true"] [type="submit"]`);
+  for (let el of elements) el.removeAttribute("type");
+}
 
 function shouldShowCookiePopup() {
   const cookie = document.cookie.split(";").find((c) => c.includes("hidePopup"));
@@ -53,15 +138,15 @@ function setCookieToHidePopup(hidePeriod) {
 }
 
 function hidePopupByDefault() {
-  const styleSheet = new CSSStyleSheet();
+  styleSheetToHidePopup = new CSSStyleSheet();
 
-  styleSheet.replaceSync(`
-    #flowappz-cookie-consent {
+  styleSheetToHidePopup.replaceSync(`
+    [flowappz-cookie-popup="true"] {
       display: none;
     }
   `);
 
-  document.adoptedStyleSheets.push(styleSheet);
+  document.adoptedStyleSheets.push(styleSheetToHidePopup);
 }
 
 async function deleteCookiesUsingCookieStore() {
@@ -84,38 +169,33 @@ function expireCookies() {
     });
 }
 
-function attachCssStyle() {
-  const styleSheet = new CSSStyleSheet();
-
-  styleSheet.replaceSync(`
-    .cookie-consent-switch-root[checked] {
-      background-color: black;
-    }
-
-    .cookie-consent-switch-root[checked] .cookie-consent-slider {
-      left: calc(100% - 35px);
-    }
-  `);
-
-  document.adoptedStyleSheets.push(styleSheet);
-}
-
 function makeCookieTogglersInteractive() {
-  const togglers = document.querySelectorAll(".cookie-consent-switch-root");
+  /** @type {NodeListOf<HTMLInputElement>} */
+  const togglers = document.querySelectorAll(`[flowappz-cookie-choice]`);
 
-  togglers.forEach((toggler) => {
-    toggler.addEventListener("click", () => {
-      const key = toggler.getAttribute("key");
-      const isChecked = toggler.getAttribute("checked");
-      if (isChecked === null) {
-        toggler.setAttribute("checked", "true");
-        cookiePerferences[key] = true;
-      } else {
-        toggler.removeAttribute("checked");
-        cookiePerferences[key] = false;
-      }
+  for (let toggler of togglers) {
+    toggler.addEventListener("change", () => {
+      let key = toggler.getAttribute("flowappz-cookie-choice");
+      if (key === "personalization") key = "functional";
+
+      if (toggler.checked) cookiePerferences[key] = true;
+      else cookiePerferences[key] = false;
     });
-  });
+  }
+
+  // togglers.forEach((toggler) => {
+  //   toggler.addEventListener("click", () => {
+  //     const key = toggler.getAttribute("key");
+  //     const isChecked = toggler.getAttribute("checked");
+  //     if (isChecked === null) {
+  //       toggler.setAttribute("checked", "true");
+  //       cookiePerferences[key] = true;
+  //     } else {
+  //       toggler.removeAttribute("checked");
+  //       cookiePerferences[key] = false;
+  //     }
+  //   });
+  // });
 }
 
 async function loadCookiePopup() {
@@ -144,8 +224,31 @@ async function loadCookiePopup() {
   }
 }
 
+async function connectToGoogleAnalytics(siteId) {
+  try {
+    initializeGoogleTagCookieWithDefaultConfig();
+
+    const res = await fetch(`https://cookie-consent-production.up.railway.app/api/cookie-consent/sites/${siteId}`);
+    if (res.ok) {
+      data = await res.json();
+      loadGoogleAnalyticsScript(data.googleAnalyticsId);
+    }
+  } catch (err) {
+    console.log("Error: ", err);
+  }
+}
+
 function initializeGoogleTagCookieWithDefaultConfig() {
   try {
+    const gtagFunctionDeclarationScript = document.createElement("script");
+    gtagFunctionDeclarationScript.setAttribute("foo", "true");
+    gtagFunctionDeclarationScript.textContent = `
+    // Define dataLayer and the gtag function.
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    `;
+    document.head.appendChild(gtagFunctionDeclarationScript);
+
     const userPreferenceCookie = document.cookie.split(";").find((c) => c.startsWith("cookiePreferences"));
     const savedUserPreferences = userPreferenceCookie ? JSON.parse(userPreferenceCookie.split("=")?.[1]) : null;
 
@@ -159,6 +262,25 @@ function initializeGoogleTagCookieWithDefaultConfig() {
   } catch (err) {
     console.log(`Error initializing Google tag with default state`, err);
   }
+}
+
+function loadGoogleAnalyticsScript(googleAnalyticsId) {
+  const googleAnalyticsScript = document.createElement("script");
+  googleAnalyticsScript.async = true;
+  googleAnalyticsScript.src = `https://www.googletagmanager.com/gtag/js?id=${googleAnalyticsId}`;
+
+  document.head.append(googleAnalyticsScript);
+
+  const connectAnalyticsScript = document.createElement("script");
+  connectAnalyticsScript.textContent = `
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', '${googleAnalyticsId}');
+  `;
+
+  document.head.append(connectAnalyticsScript);
 }
 
 function updateGoogleTagCookieConfig() {
@@ -212,7 +334,35 @@ function handleCookieReject() {
 }
 
 function handleCookieAccept() {
-  cookiePopup.style.display = "none";
+  styleSheetToHidePopup.disabled = false;
+  const settingsUI = document.querySelector(`[flowappz-cookie-settings-wrapper="true"]`);
+  settingsUI.style.display = "none";
+
+  storeCookiePreferences();
+  updateGoogleTagCookieConfig();
+}
+
+function handleAcceptAll() {
+  styleSheetToHidePopup.disabled = false;
+  const settingsUI = document.querySelector(`[flowappz-cookie-settings-wrapper="true"]`);
+  settingsUI.style.display = "none";
+
+  for (let key in cookiePerferences) {
+    cookiePerferences[key] = true;
+  }
+
+  storeCookiePreferences();
+  updateGoogleTagCookieConfig();
+}
+
+function handleRejectAll() {
+  styleSheetToHidePopup.disabled = false;
+  const settingsUI = document.querySelector(`[flowappz-cookie-settings-wrapper="true"]`);
+  settingsUI.style.display = "none";
+
+  for (let key in cookiePerferences) {
+    cookiePerferences[key] = false;
+  }
 
   storeCookiePreferences();
   updateGoogleTagCookieConfig();
