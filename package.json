@@ -1,4 +1,11 @@
 {
   "name": "cookie-consent",
-  "version": "1.2.4"
+  "version": "1.2.4",
+  "dependencies": {
+    "fs": "^0.0.1-security",
+    "javascript-obfuscator": "^4.1.1"
+  },
+  "scripts": {
+    "obfuscate": "node obfuscate.js"
+  }
 }
