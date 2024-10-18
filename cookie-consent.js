@@ -72,7 +72,7 @@ function enableFreeFunctionality() {
     styleSheetToHidePopup.disabled = false;
     storeCookiePreferences();
   });
-
+  // TODO: FIX FUNCTION CALL
   const rejectButton = document.querySelector(`[flowappz-cookie-command="reject-all"]`);
   rejectButton.addEventListener("click", () => () => {
     styleSheetToHidePopup.disabled = false;
