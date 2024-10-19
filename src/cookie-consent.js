@@ -18,7 +18,7 @@ hidePopupByDefault()
 
 window.addEventListener('DOMContentLoaded', async function initializeCookieConsentApp() {
     const siteId = document.querySelector('html').getAttribute('data-wf-site')
-    if (await hasValidLicenseKey(siteId)) makeTheCookieConsentInteractive(siteId)
+    if (await hasValidLicenseKey(siteId)) await makeTheCookieConsentInteractive(siteId)
     else enableFreeFunctionality()
 })
 

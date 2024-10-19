@@ -157,11 +157,7 @@ function shouldShowCookiePopup() {
 function hidePopupByDefault() {
     styleSheetToHidePopup = new CSSStyleSheet()
 
-    styleSheetToHidePopup.replaceSync(`
-    [flowappz-cookie-popup="true"] {
-      display: none;
-    }
-  `)
+    styleSheetToHidePopup.replaceSync(`[flowappz-cookie-popup="true"] {display: none;}`)
 
     document.adoptedStyleSheets.push(styleSheetToHidePopup)
 }
@@ -256,11 +252,8 @@ function initializeGoogleTagCookieWithDefaultConfig() {
     try {
         const gtagFunctionDeclarationScript = document.createElement('script')
         gtagFunctionDeclarationScript.setAttribute('foo', 'true')
-        gtagFunctionDeclarationScript.textContent = `
-            // Define dataLayer and the gtag function.
-            window.dataLayer = window.dataLayer || [];
-            function gtag(){dataLayer.push(arguments);}
-        `
+        // Define dataLayer and the gtag function.
+        gtagFunctionDeclarationScript.textContent = `window.dataLayer = window.dataLayer || [];function gtag() {dataLayer.push(arguments);}`
         document.head.appendChild(gtagFunctionDeclarationScript)
 
         const userPreferenceCookie = document.cookie.split(';').find((c) => c.startsWith('cookiePreferences'))
@@ -286,13 +279,7 @@ function loadGoogleAnalyticsScript(googleAnalyticsId: string) {
     document.head.append(googleAnalyticsScript)
 
     const connectAnalyticsScript = document.createElement('script')
-    connectAnalyticsScript.textContent = `
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-
-  gtag('config', '${googleAnalyticsId}');
-  `
+    connectAnalyticsScript.textContent = `window.dataLayer = window.dataLayer || [];function gtag(){dataLayer.push(arguments);}gtag('js', new Date());gtag('config', '${googleAnalyticsId}');`
 
     document.head.append(connectAnalyticsScript)
 }
