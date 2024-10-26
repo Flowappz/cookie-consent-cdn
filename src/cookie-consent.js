@@ -74,7 +74,6 @@ async function hasValidLicenseKey(siteId) {
     const res = await fetch(`https://staging-app.flowappz.com/api/licenses/validate?siteId=${siteId}&appName=cookie-consent`)
     if (res.ok) {
         data = await res.json()
-
         return data.valid
     }
     return false
