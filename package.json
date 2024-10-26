@@ -9,6 +9,8 @@
     "preview": "vite preview"
   },
   "devDependencies": {
+    "@types": "link:@types",
+    "ga-gtag": "^1.2.0",
     "prettier": "3.3.3",
     "typescript": "^5.5.3",
     "vite": "^5.4.8",
