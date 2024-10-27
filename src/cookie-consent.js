@@ -359,8 +359,9 @@ function cookiePreferencesExpireyDate() {
 
 function storeCookiePreferences(cookieSetup) {
     const expireyDate = cookiePreferencesExpireyDate()
+    console.log("run")
     if (cookieSetup) {
-        document.cookie = `cookiePreferences=${JSON.stringify(cookiePreferences)}; Path=/; Expires=${expireyDate.toUTCString()}`
+        document.cookie = `cookiePreferences=${JSON.stringify(cookiePerferences)}; Path=/; Expires=${expireyDate.toUTCString()}`
         document.cookie = `hidePopup=true; Path=/; Expires=${expireyDate.toUTCString()}`
     } else {
         document.cookie = `cookiePreferences=${JSON.stringify(cookiePerferences)}; Path=/; Expires=${expireyDate.toUTCString()}`
