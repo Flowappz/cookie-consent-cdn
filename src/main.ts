@@ -407,7 +407,6 @@ function handleCookieAccept(): void {
     if (settingsUI) {
         settingsUI.style.display = 'none'
     }
-
     storeCookiePreferences()
     updateGoogleTagCookieConfig()
     updateUiBasedOnCookiePreferences()
