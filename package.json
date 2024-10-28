@@ -5,8 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "npx tsc && vite build",
-    "watch:dev": "npx tsc && vite build --watch",
+    "prebuild": "pnpm install typescript -g",
+    "build": "npx tsc && vite build --watch",
     "preview": "vite preview"
   },
   "devDependencies": {
