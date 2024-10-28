@@ -11,5 +11,7 @@ export default defineConfig({
                 manualChunks: undefined,
             },
         },
+        sourcemap: false,
+        minify: 'terser',
     },
 })
