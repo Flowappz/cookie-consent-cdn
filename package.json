@@ -9,7 +9,6 @@
     "preview": "vite preview"
   },
   "devDependencies": {
-    "@types": "link:@types",
     "concurrently": "^9.0.1",
     "ga-gtag": "^1.2.0",
     "prettier": "3.3.3",
