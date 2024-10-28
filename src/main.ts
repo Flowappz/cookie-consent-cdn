@@ -1,147 +1,210 @@
-// import './style.css'
-
 /**
- * VERSION: 1.2.4
- */
+ * VERSION: 1.2.7
+ **/
 
-declare global {
-    interface Window {
-        gtag: (...args: any[]) => void
-    }
-}
-
-let cookiePopup: HTMLElement | null = null
-let cookiePopupHidePeriod = 'FOREVER'
-
-type TCookiePreferences = {
+interface CookiePreferences {
     strictlyNecessary: boolean
-    functional: boolean
-    statistical: boolean
+    analytics: boolean
+    personalization: boolean
     marketing: boolean
+
+    [key: string]: boolean
 }
-type TCookiePreferencesKeys = keyof TCookiePreferences
-let cookiePreferences: TCookiePreferences = {
+
+// let cookiePopup: HTMLElement | null = null
+let cookiePopupHidePeriod: string = 'FOREVER'
+let cookiePreferences: CookiePreferences = {
     strictlyNecessary: true,
-    functional: true,
-    statistical: true,
-    marketing: true,
+    analytics: false,
+    personalization: false,
+    marketing: false,
 }
 
 let styleSheetToHidePopup: CSSStyleSheet | null = null
 
 hidePopupByDefault()
+console.log('FlowAppz Cookie Consent')
+
+function getCookieByName(cookieName: string): string | null {
+    const cookies = document.cookie.split(';')
+    for (let cookie of cookies) {
+        cookie = cookie.trim()
+        if (cookie.startsWith(`${cookieName}=`)) {
+            return cookie.substring(cookieName.length + 1)
+        }
+    }
+    return null
+}
+
+function updateUiBasedOnCookiePreferences(): void {
+    const userPreferences = getCookieByName('cookiePreferences')
+
+    if (userPreferences) {
+        cookiePreferences = JSON.parse(userPreferences)
+        const togglers = document.querySelectorAll<HTMLInputElement>(`[flowappz-cookie-choice]`)
+
+        togglers.forEach((toggler) => {
+            const key = toggler.getAttribute('flowappz-cookie-choice')
+            if (key && key in cookiePreferences) {
+                toggler.checked = cookiePreferences[key]
+
+                const labelElement = toggler.closest('label')
+                if (labelElement) {
+                    const customCheckboxDiv = labelElement.querySelector('.w-checkbox-input--inputType-custom')
+                    if (customCheckboxDiv) {
+                        if (cookiePreferences[key]) {
+                            customCheckboxDiv.classList.add('w--redirected-checked')
+                        } else {
+                            if (key !== 'necessary') {
+                                customCheckboxDiv.classList.remove('w--redirected-checked')
+                            }
+                        }
+                    }
+                }
+            }
+        })
+    }
+}
 
 window.addEventListener('DOMContentLoaded', async function initializeCookieConsentApp() {
     const siteId = document.querySelector('html')?.getAttribute('data-wf-site')
-    if (await hasValidLicenseKey(siteId)) await makeTheCookieConsentInteractive(siteId)
-    else enableFreeFunctionality()
+    enableFreeFunctionality()
+    if (siteId && (await hasValidLicenseKey(siteId))) {
+        makeTheCookieConsentInteractive(siteId)
+    } else {
+        const manageSettingsBtn = document.querySelectorAll<HTMLElement>(`[flowappz-cookie-command="manage-settings"]`)
+
+        if (manageSettingsBtn) {
+            manageSettingsBtn.forEach((b) => {
+                b.style.display = 'none'
+            })
+        }
+
+        console.log('%cPurchase a subscription to access the premium features of Cookie Consent.', 'color: red; font-size: 30px; font-weight: bold;')
+    }
+
+    const checkbox = document.querySelector<HTMLInputElement>('[flowappz-cookie-choice="necessary"]')
+    if (checkbox) {
+        checkbox.setAttribute('disabled', 'true')
+    }
+    updateUiBasedOnCookiePreferences()
 })
 
-// window.addEventListener("DOMContentLoaded", async () => {
-//   try {
-//     initializeGoogleTagCookieWithDefaultConfig();
-//     await loadCookiePopup();
-
-//     const agreeButton = document.getElementById("flowappz-cookie-consent-approve");
-//     agreeButton.tabIndex = 0;
-//     agreeButton.addEventListener("click", handleCookieAccept);
-
-//     const rejectButton = document.getElementById("flowappz-cookie-consent-reject");
-//     if (rejectButton) {
-//       rejectButton.tabIndex = 0;
-//       rejectButton.addEventListener("click", handleCookieReject);
-//     }
-//   } catch (err) {
-//     console.log("Error: ", err);
-//   }
-// });
-
-async function hasValidLicenseKey(siteId: string | null | undefined) {
-    const res = await fetch(`https://cache-service-staging.up.railway.app/api/license?siteId=${siteId}&appName=cookie-consent`)
+async function hasValidLicenseKey(siteId: string): Promise<boolean> {
+    const res = await fetch(`${import.meta.env.VITE_LICENSE_VALIDATION_API}/api/license?siteId=${siteId}&appName=cookie-consent`)
     if (res.ok) {
-        let data = await res.json()
+        const data = await res.json()
+
         return data.active
     }
     return false
 }
 
-async function makeTheCookieConsentInteractive(siteId: string | null | undefined) {
+async function makeTheCookieConsentInteractive(siteId: string): Promise<void> {
     try {
         makeTheUIInteractive()
-        await connectToGoogleAnalytics(siteId)
+        connectToGoogleAnalytics(siteId)
     } catch (err) {
         console.log('Error: ', err)
     }
 }
 
-function enableFreeFunctionality() {
-    if (!shouldShowCookiePopup()) return
-    if (!cookiePopup) return
-    if (!cookiePopupHidePeriod) return
-    if (!styleSheetToHidePopup) return
-
-    styleSheetToHidePopup.disabled = true
-
-    const agreeButton = document.querySelector(`[flowappz-cookie-command="accept-all"]`)
-    agreeButton?.addEventListener('click', () => {
-        if (styleSheetToHidePopup) styleSheetToHidePopup.disabled = false
-        storeCookiePreferences()
-    })
-
-    const rejectButton = document.querySelector(`[flowappz-cookie-command="reject-all"]`)
-    rejectButton?.addEventListener('click', () => {
-        if (styleSheetToHidePopup) styleSheetToHidePopup.disabled = false
-        storeCookiePreferences()
-    })
-}
-
-function makeTheUIInteractive() {
+function enableFreeFunctionality(): void {
     if (!shouldShowCookiePopup()) return
 
-    preventDefaultFormSubmit()
-    if (styleSheetToHidePopup) styleSheetToHidePopup.disabled = true
-
-    const acceptAllButtons = document.querySelectorAll(`[flowappz-cookie-command="accept-all"]`)
-    for (let acceptAllButton of acceptAllButtons) {
-        acceptAllButton.addEventListener('click', handleAcceptAll)
+    if (styleSheetToHidePopup) {
+        styleSheetToHidePopup.disabled = true
     }
 
-    const rejectAllButtons = document.querySelectorAll(`[flowappz-cookie-command="reject-all"]`)
-    for (let rejectAllButton of rejectAllButtons) {
-        rejectAllButton.addEventListener('click', handleRejectAll)
-    }
-
-    const acceptSelectedButton = document.querySelector(`[flowappz-cookie-command="accept-selected"]`)
-    acceptSelectedButton?.addEventListener('click', handleCookieAccept)
-
-    const settingsUI: HTMLDivElement | null = document.querySelector(`[flowappz-cookie-settings-wrapper="true"]`)
-    if (settingsUI) settingsUI.style.display = 'none'
-    const manageSettingsButtons = document.querySelectorAll(`[flowappz-cookie-command="manage-settings"]`)
-    for (let settingsButton of manageSettingsButtons) {
-        settingsButton.addEventListener('click', () => {
-            if (settingsUI) settingsUI.style.display = 'flex'
+    const agreeButton = document.querySelector<HTMLElement>(`[flowappz-cookie-command="accept-all"]`)
+    if (agreeButton) {
+        agreeButton.addEventListener('click', () => {
+            let cookiePreferences: CookiePreferences = {
+                strictlyNecessary: true,
+                personalization: true,
+                statistical: true,
+                analytics: true,
+                marketing: true,
+            }
+            if (styleSheetToHidePopup) {
+                styleSheetToHidePopup.disabled = false
+            }
+            storeCookiePreferences(cookiePreferences)
         })
     }
 
-    const closeSettingsButton = document.querySelector(`[flowappz-cookie-command="close-settings"]`)
-    closeSettingsButton?.addEventListener('click', () => {
-        if (settingsUI) settingsUI.style.display = 'none'
+    const rejectButton = document.querySelector<HTMLElement>(`[flowappz-cookie-command="reject-all"]`)
+    if (rejectButton) {
+        rejectButton.addEventListener('click', () => {
+            if (styleSheetToHidePopup) {
+                styleSheetToHidePopup.disabled = false
+            }
+            storeCookiePreferences()
+        })
+    }
+}
+
+function makeTheUIInteractive(): void {
+    if (!shouldShowCookiePopup() && styleSheetToHidePopup) {
+        styleSheetToHidePopup.disabled = false
+    }
+
+    preventDefaultFormSubmit()
+
+    const acceptAllButtons = document.querySelectorAll<HTMLElement>(`[flowappz-cookie-command="accept-all"]`)
+    acceptAllButtons.forEach((button) => {
+        button.addEventListener('click', handleAcceptAll)
     })
 
-    makeCookieTogglesInteractive()
+    const rejectAllButtons = document.querySelectorAll<HTMLElement>(`[flowappz-cookie-command="reject-all"]`)
+    rejectAllButtons.forEach((button) => {
+        button.addEventListener('click', handleRejectAll)
+    })
+
+    const acceptSelectedButton = document.querySelector<HTMLElement>(`[flowappz-cookie-command="accept-selected"]`)
+    if (acceptSelectedButton) {
+        acceptSelectedButton.addEventListener('click', handleCookieAccept)
+    }
+
+    const settingsUI = document.querySelector<HTMLDivElement>(`[flowappz-cookie-settings-wrapper="true"]`)
+    if (settingsUI) {
+        settingsUI.style.display = 'none'
+    }
+
+    const manageSettingsButtons = document.querySelectorAll<HTMLElement>('[flowappz-cookie-command="manage-settings"]')
+    manageSettingsButtons.forEach((button) => {
+        button.addEventListener('click', () => {
+            if (settingsUI) settingsUI.style.display = 'flex'
+        })
+    })
+
+    const closeSettingsButton = document.querySelector<HTMLElement>(`[flowappz-cookie-command="close-settings"]`)
+    if (closeSettingsButton && settingsUI) {
+        closeSettingsButton.addEventListener('click', () => (settingsUI.style.display = 'none'))
+    }
+
+    const closePopUpButtons = document.querySelectorAll<HTMLElement>(`[flowappz-cookie-command="close-cookie-popup"]`)
+    closePopUpButtons.forEach((button) => {
+        button.addEventListener('click', () => {
+            const cookiePopUp = document.querySelector<HTMLElement>(`[flowappz-cookie-popup="true"]`)
+            if (cookiePopUp) cookiePopUp.style.display = 'none'
+        })
+    })
+
+    makeCookieTogglersInteractive()
 }
 
-function preventDefaultFormSubmit() {
-    const elements = document.querySelectorAll(`[flowappz-cookie-settings-wrapper="true"] [type="submit"]`)
-    for (let el of elements) el.removeAttribute('type')
+function preventDefaultFormSubmit(): void {
+    const elements = document.querySelectorAll<HTMLElement>(`[flowappz-cookie-settings-wrapper="true"] [type="submit"]`)
+    elements.forEach((el) => el.removeAttribute('type'))
 }
 
-function shouldShowCookiePopup() {
+function shouldShowCookiePopup(): boolean {
     const cookie = document.cookie.split(';').find((c) => c.includes('hidePopup'))
     return !cookie
 }
 
-// function setCookieToHidePopup(hidePeriod: string) {
+// function setCookieToHidePopup(hidePeriod: string): void {
 //     let numberOfDays = 30
 //
 //     if (hidePeriod === 'FOREVER') numberOfDays = 10 * 365
@@ -154,15 +217,19 @@ function shouldShowCookiePopup() {
 //     document.cookie = `hidePopup=true; Path=/; Expires=${expiryDate.toUTCString()}`
 // }
 
-function hidePopupByDefault() {
+function hidePopupByDefault(): void {
     styleSheetToHidePopup = new CSSStyleSheet()
 
-    styleSheetToHidePopup.replaceSync(`[flowappz-cookie-popup="true"] {display: none;}`)
+    styleSheetToHidePopup.replaceSync(`
+    [flowappz-cookie-popup="true"] {
+      display: none;
+    }
+  `)
 
     document.adoptedStyleSheets.push(styleSheetToHidePopup)
 }
 
-// async function deleteCookiesUsingCookieStore() {
+// async function deleteCookiesUsingCookieStore(): Promise<void> {
 //     const cookies = await cookieStore.getAll()
 //
 //     for (let cookie of cookies) {
@@ -171,59 +238,47 @@ function hidePopupByDefault() {
 //     }
 // }
 
-// function expireCookies() {
+// function expireCookies(): void {
 //     document.cookie
 //         .split(';')
 //         .filter((c) => c.split('=')[0].trim() !== 'hidePopup')
-//         .map((c) => {
+//         .forEach((c) => {
 //             const cookieKey = c.split('=')[0]
 //             document.cookie = `${cookieKey}=; Path=/; Expires=${new Date().toUTCString()}`
 //             document.cookie = `${cookieKey}=; Path=/; Expires=${new Date().toUTCString()}; domain=.${window.location.host}`
 //         })
 // }
 
-function makeCookieTogglesInteractive() {
-    const toggles: NodeListOf<HTMLInputElement> = document.querySelectorAll(`[flowappz-cookie-choice]`)
+function makeCookieTogglersInteractive(): void {
+    const togglers = document.querySelectorAll<HTMLInputElement>(`[flowappz-cookie-choice]`)
 
-    for (let toggle of toggles) {
-        toggle.addEventListener('change', () => {
-            let key = toggle.getAttribute('flowappz-cookie-choice')
-            if (key === 'personalization') key = 'functional'
-            cookiePreferences[key as TCookiePreferencesKeys] = toggle.checked
+    togglers.forEach((toggler) => {
+        toggler.addEventListener('change', () => {
+            const key = toggler.getAttribute('flowappz-cookie-choice')
+            if (key && key in cookiePreferences) {
+                cookiePreferences[key] = toggler.checked
+            }
         })
-    }
-
-    // toggles.forEach((toggles) => {
-    //   toggles.addEventListener("click", () => {
-    //     const key = toggles.getAttribute("key");
-    //     const isChecked = toggles.getAttribute("checked");
-    //     if (isChecked === null) {
-    //       toggles.setAttribute("checked", "true");
-    //       cookiePreferences[key] = true;
-    //     } else {
-    //       toggles.removeAttribute("checked");
-    //       cookiePreferences[key] = false;
-    //     }
-    //   });
-    // });
+    })
 }
 
-// async function loadCookiePopup() {
+// async function loadCookiePopup(): Promise<void> {
 //     if (!shouldShowCookiePopup()) {
 //         return
 //     }
 //
-//     makeCookieTogglesInteractive()
+//     makeCookieTogglersInteractive()
 //
 //     const siteId = document.querySelector('html')?.getAttribute('data-wf-site')
-//     const res = await fetch(`https://cookie-consent-production.up.railway.app/api/cookie-consent/${siteId}`)
-//     if (res.ok) {
-//         let data = await res.json()
+//     if (siteId) {
+//         const res = await fetch(`${import.meta.env.VITE_API_URL}/api/cookie-consent/sites/${siteId}`)
+//         if (res.ok) {
+//             const data = await res.json()
 //
-//         if (!data.cookiePopupEnabled) return
+//             if (!data.cookiePopupEnabled) return
 //
-//         let privacyPolicyUrl = data.privacyPolicyUrl
-//         cookiePopupHidePeriod = data.cookiePopupHidePeriod
+//             cookiePopupHidePeriod = data.cookiePopupHidePeriod
+//         }
 //     }
 //
 //     cookiePopup = document.getElementById('flowappz-cookie-consent')
@@ -234,13 +289,12 @@ function makeCookieTogglesInteractive() {
 //     }
 // }
 
-async function connectToGoogleAnalytics(siteId: string | null | undefined) {
+async function connectToGoogleAnalytics(siteId: string): Promise<void> {
     try {
         initializeGoogleTagCookieWithDefaultConfig()
-
-        const res = await fetch(`https://cookie-consent-production.up.railway.app/api/cookie-consent/sites/${siteId}`)
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/cookie-consent/sites/${siteId}`)
         if (res.ok) {
-            let data = await res.json()
+            const data = await res.json()
             loadGoogleAnalyticsScript(data.googleAnalyticsId)
         }
     } catch (err) {
@@ -248,21 +302,24 @@ async function connectToGoogleAnalytics(siteId: string | null | undefined) {
     }
 }
 
-function initializeGoogleTagCookieWithDefaultConfig() {
+function initializeGoogleTagCookieWithDefaultConfig(): void {
     try {
         const gtagFunctionDeclarationScript = document.createElement('script')
         gtagFunctionDeclarationScript.setAttribute('foo', 'true')
-        // Define dataLayer and the gtag function.
-        gtagFunctionDeclarationScript.textContent = `window.dataLayer = window.dataLayer || [];function gtag() {dataLayer.push(arguments);}`
+        gtagFunctionDeclarationScript.textContent = `
+    // Define dataLayer and the gtag function.
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    `
         document.head.appendChild(gtagFunctionDeclarationScript)
 
         const userPreferenceCookie = document.cookie.split(';').find((c) => c.startsWith('cookiePreferences'))
         const savedUserPreferences = userPreferenceCookie ? JSON.parse(userPreferenceCookie.split('=')?.[1]) : null
 
-        window.gtag('consent', 'default', {
+        ;(window as any).gtag('consent', 'default', {
             ad_storage: savedUserPreferences?.marketing ? 'granted' : 'denied',
             ad_user_data: savedUserPreferences?.marketing ? 'granted' : 'denied',
-            ad_personalization: savedUserPreferences?.marketing ? 'granted' : 'denied',
+            ad_personalization: savedUserPreferences?.personalization ? 'granted' : 'denied',
             analytics_storage: savedUserPreferences?.statistical ? 'granted' : 'denied',
             wait_for_update: savedUserPreferences ? 0 : 20000,
         })
@@ -271,7 +328,7 @@ function initializeGoogleTagCookieWithDefaultConfig() {
     }
 }
 
-function loadGoogleAnalyticsScript(googleAnalyticsId: string) {
+function loadGoogleAnalyticsScript(googleAnalyticsId: string): void {
     const googleAnalyticsScript = document.createElement('script')
     googleAnalyticsScript.async = true
     googleAnalyticsScript.src = `https://www.googletagmanager.com/gtag/js?id=${googleAnalyticsId}`
@@ -279,28 +336,33 @@ function loadGoogleAnalyticsScript(googleAnalyticsId: string) {
     document.head.append(googleAnalyticsScript)
 
     const connectAnalyticsScript = document.createElement('script')
-    connectAnalyticsScript.textContent = `window.dataLayer = window.dataLayer || [];function gtag(){dataLayer.push(arguments);}gtag('js', new Date());gtag('config', '${googleAnalyticsId}');`
+    connectAnalyticsScript.textContent = `
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', '${googleAnalyticsId}');
+  `
 
     document.head.append(connectAnalyticsScript)
 }
 
-function updateGoogleTagCookieConfig() {
+function updateGoogleTagCookieConfig(): void {
     try {
         const config = {
             ad_storage: cookiePreferences.marketing ? 'granted' : 'denied',
             ad_user_data: cookiePreferences.marketing ? 'granted' : 'denied',
-            ad_personalization: cookiePreferences.marketing ? 'granted' : 'denied',
-
-            analytics_storage: cookiePreferences.statistical ? 'granted' : 'denied',
+            ad_personalization: cookiePreferences.personalization ? 'granted' : 'denied',
+            analytics_storage: cookiePreferences.analytics ? 'granted' : 'denied',
         }
 
-        window.gtag('consent', 'update', config)
+        ;(window as any).gtag('consent', 'update', config)
     } catch (err) {
         console.log(`Error updating Google tag config`, err)
     }
 }
 
-function cookiePreferencesExpiryDate() {
+function cookiePreferencesExpiryDate(): Date {
     let numberOfDays = 30
 
     if (cookiePopupHidePeriod === 'FOREVER') numberOfDays = 10 * 365
@@ -312,56 +374,78 @@ function cookiePreferencesExpiryDate() {
     return new Date(today.setDate(today.getDate() + numberOfDays))
 }
 
-function storeCookiePreferences() {
+function storeCookiePreferences(cookieSetup?: CookiePreferences): void {
     const expiryDate = cookiePreferencesExpiryDate()
 
-    document.cookie = `cookiePreferences=${JSON.stringify(cookiePreferences)}; Path=/; Expires=${expiryDate.toUTCString()}`
-    document.cookie = `hidePopup=true; Path=/; Expires=${expiryDate.toUTCString()}`
+    if (cookieSetup) {
+        document.cookie = `cookiePreferences=${JSON.stringify(cookiePreferences)}; Path=/; Expires=${expiryDate.toUTCString()}`
+        document.cookie = `hidePopup=true; Path=/; Expires=${expiryDate.toUTCString()}`
+    } else {
+        document.cookie = `cookiePreferences=${JSON.stringify(cookiePreferences)}; Path=/; Expires=${expiryDate.toUTCString()}`
+        document.cookie = `hidePopup=true; Path=/; Expires=${expiryDate.toUTCString()}`
+    }
 }
 
-// function handleCookieReject() {
-//     if (cookiePopup) cookiePopup.style.display = 'none'
-//
-//     for (let key in cookiePreferences) {
-//         cookiePreferences[key as TCookiePreferencesKeys] = false
+// function handleCookieReject(): void {
+//     if (cookiePopup) {
+//         cookiePopup.style.display = 'none';
 //     }
 //
-//     storeCookiePreferences()
-//     updateGoogleTagCookieConfig()
+//     for (let key in cookiePreferences) {
+//         cookiePreferences[key] = false;
+//     }
+//
+//     storeCookiePreferences();
+//     updateGoogleTagCookieConfig();
 // }
 
-function handleCookieAccept() {
-    if (styleSheetToHidePopup) styleSheetToHidePopup.disabled = false
-    const settingsUI: HTMLElement | null = document.querySelector(`[flowappz-cookie-settings-wrapper="true"]`)
-    if (settingsUI) settingsUI.style.display = 'none'
-
+function handleCookieAccept(): void {
+    if (styleSheetToHidePopup) {
+        styleSheetToHidePopup.disabled = false
+    }
+    const settingsUI = document.querySelector<HTMLElement>(`[flowappz-cookie-settings-wrapper="true"]`)
+    if (settingsUI) {
+        settingsUI.style.display = 'none'
+    }
     storeCookiePreferences()
     updateGoogleTagCookieConfig()
+    updateUiBasedOnCookiePreferences()
 }
 
-function handleAcceptAll() {
-    if (styleSheetToHidePopup) styleSheetToHidePopup.disabled = false
-    const settingsUI: HTMLElement | null = document.querySelector(`[flowappz-cookie-settings-wrapper="true"]`)
-    if (settingsUI) settingsUI.style.display = 'none'
+function handleAcceptAll(): void {
+    if (styleSheetToHidePopup) {
+        styleSheetToHidePopup.disabled = false
+    }
+    const settingsUI = document.querySelector<HTMLElement>(`[flowappz-cookie-settings-wrapper="true"]`)
+    if (settingsUI) {
+        settingsUI.style.display = 'none'
+    }
 
     for (let key in cookiePreferences) {
-        cookiePreferences[key as TCookiePreferencesKeys] = true
+        cookiePreferences[key] = true
     }
 
     storeCookiePreferences()
     updateGoogleTagCookieConfig()
+    updateUiBasedOnCookiePreferences()
 }
 
-function handleRejectAll() {
-    if (styleSheetToHidePopup) styleSheetToHidePopup.disabled = false
-
-    const settingsUI: HTMLElement | null = document.querySelector(`[flowappz-cookie-settings-wrapper="true"]`)
-    if (settingsUI) settingsUI.style.display = 'none'
+function handleRejectAll(): void {
+    if (styleSheetToHidePopup) {
+        styleSheetToHidePopup.disabled = false
+    }
+    const settingsUI = document.querySelector<HTMLElement>(`[flowappz-cookie-settings-wrapper="true"]`)
+    if (settingsUI) {
+        settingsUI.style.display = 'none'
+    }
 
     for (let key in cookiePreferences) {
-        cookiePreferences[key as TCookiePreferencesKeys] = false
+        if (key !== 'strictlyNecessary') {
+            cookiePreferences[key] = false
+        }
     }
 
     storeCookiePreferences()
     updateGoogleTagCookieConfig()
+    updateUiBasedOnCookiePreferences()
 }
