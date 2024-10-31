@@ -1,5 +1,5 @@
 /**
- * VERSION: 1.2.7
+ * VERSION: 1.2.5
  **/
 
 interface CookiePreferences {
@@ -11,7 +11,6 @@ interface CookiePreferences {
     [key: string]: boolean
 }
 
-// let cookiePopup: HTMLElement | null = null
 let cookiePopupHidePeriod: string = 'FOREVER'
 let cookiePreferences: CookiePreferences = {
     strictlyNecessary: true,
@@ -20,9 +19,22 @@ let cookiePreferences: CookiePreferences = {
     marketing: false,
 }
 
-let styleSheetToHidePopup: CSSStyleSheet | null = null
+const popup = document.querySelector<HTMLElement>('[flowappz-cookie-popup="true"]')
 
-hidePopupByDefault()
+
+const showHideManageSettingsBtnByDefault = (displayType: 'none' | 'inline-block' | 'block' | 'flex' = 'none') => {
+    const manageSettingsBtn = document.querySelectorAll<HTMLElement>(`[flowappz-cookie-command="manage-settings"]`)
+
+    if (manageSettingsBtn) {
+        manageSettingsBtn.forEach((b) => {
+            b.style.display = displayType
+        })
+    }
+}
+
+showHideManageSettingsBtnByDefault('none')
+
+// hidePopupByDefault()
 console.log('FlowAppz Cookie Consent')
 
 function getCookieByName(cookieName: string): string | null {
@@ -70,15 +82,10 @@ window.addEventListener('DOMContentLoaded', async function initializeCookieConse
     const siteId = document.querySelector('html')?.getAttribute('data-wf-site')
     enableFreeFunctionality()
     if (siteId && (await hasValidLicenseKey(siteId))) {
+        showHideManageSettingsBtnByDefault('flex')
         makeTheCookieConsentInteractive(siteId)
     } else {
-        const manageSettingsBtn = document.querySelectorAll<HTMLElement>(`[flowappz-cookie-command="manage-settings"]`)
-
-        if (manageSettingsBtn) {
-            manageSettingsBtn.forEach((b) => {
-                b.style.display = 'none'
-            })
-        }
+        showHideManageSettingsBtnByDefault('none')
 
         console.log('%cPurchase a subscription to access the premium features of Cookie Consent.', 'color: red; font-size: 30px; font-weight: bold;')
     }
@@ -112,8 +119,8 @@ async function makeTheCookieConsentInteractive(siteId: string): Promise<void> {
 function enableFreeFunctionality(): void {
     if (!shouldShowCookiePopup()) return
 
-    if (styleSheetToHidePopup) {
-        styleSheetToHidePopup.disabled = true
+    if (popup) {
+        popup.classList.remove('flowappz-hide-popup')
     }
 
     const agreeButton = document.querySelector<HTMLElement>(`[flowappz-cookie-command="accept-all"]`)
@@ -126,8 +133,8 @@ function enableFreeFunctionality(): void {
                 analytics: true,
                 marketing: true,
             }
-            if (styleSheetToHidePopup) {
-                styleSheetToHidePopup.disabled = false
+            if (popup) {
+                popup.classList.add('flowappz-hide-popup')
             }
             storeCookiePreferences(cookiePreferences)
         })
@@ -136,8 +143,8 @@ function enableFreeFunctionality(): void {
     const rejectButton = document.querySelector<HTMLElement>(`[flowappz-cookie-command="reject-all"]`)
     if (rejectButton) {
         rejectButton.addEventListener('click', () => {
-            if (styleSheetToHidePopup) {
-                styleSheetToHidePopup.disabled = false
+            if (popup) {
+                popup.classList.add('flowappz-hide-popup')
             }
             storeCookiePreferences()
         })
@@ -145,8 +152,8 @@ function enableFreeFunctionality(): void {
 }
 
 function makeTheUIInteractive(): void {
-    if (!shouldShowCookiePopup() && styleSheetToHidePopup) {
-        styleSheetToHidePopup.disabled = false
+    if (!shouldShowCookiePopup() && popup) {
+        popup.classList.add('flowappz-hide-popup')
     }
 
     preventDefaultFormSubmit()
@@ -216,18 +223,6 @@ function shouldShowCookiePopup(): boolean {
 //     const expiryDate = new Date(today.setDate(today.getDate() + numberOfDays))
 //     document.cookie = `hidePopup=true; Path=/; Expires=${expiryDate.toUTCString()}`
 // }
-
-function hidePopupByDefault(): void {
-    styleSheetToHidePopup = new CSSStyleSheet()
-
-    styleSheetToHidePopup.replaceSync(`
-    [flowappz-cookie-popup="true"] {
-      display: none;
-    }
-  `)
-
-    document.adoptedStyleSheets.push(styleSheetToHidePopup)
-}
 
 // async function deleteCookiesUsingCookieStore(): Promise<void> {
 //     const cookies = await cookieStore.getAll()
@@ -400,8 +395,8 @@ function storeCookiePreferences(cookieSetup?: CookiePreferences): void {
 // }
 
 function handleCookieAccept(): void {
-    if (styleSheetToHidePopup) {
-        styleSheetToHidePopup.disabled = false
+    if (popup) {
+        popup.classList.add('flowappz-hide-popup')
     }
     const settingsUI = document.querySelector<HTMLElement>(`[flowappz-cookie-settings-wrapper="true"]`)
     if (settingsUI) {
@@ -413,8 +408,8 @@ function handleCookieAccept(): void {
 }
 
 function handleAcceptAll(): void {
-    if (styleSheetToHidePopup) {
-        styleSheetToHidePopup.disabled = false
+    if (popup) {
+        popup.classList.add('flowappz-hide-popup')
     }
     const settingsUI = document.querySelector<HTMLElement>(`[flowappz-cookie-settings-wrapper="true"]`)
     if (settingsUI) {
@@ -431,8 +426,8 @@ function handleAcceptAll(): void {
 }
 
 function handleRejectAll(): void {
-    if (styleSheetToHidePopup) {
-        styleSheetToHidePopup.disabled = false
+    if (popup) {
+        popup.classList.add('flowappz-hide-popup')
     }
     const settingsUI = document.querySelector<HTMLElement>(`[flowappz-cookie-settings-wrapper="true"]`)
     if (settingsUI) {
