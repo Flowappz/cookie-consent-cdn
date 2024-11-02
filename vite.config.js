@@ -20,14 +20,26 @@ export default defineConfig({
         target: 'es2015',
         rollupOptions: {
             // Combine root main file (if it exists) with versioned folders as inputs
+            // input: {
+            //     ...rootMainFile,
+            //     ...Object.fromEntries(
+            //         versionFolders.map((version) => [
+            //             version,
+            //             resolve(__dirname, `src/${version}/cookie-consent.ts`)
+            //         ])
+            //     )
+            // },
             input: {
                 ...rootMainFile,
                 ...Object.fromEntries(
-                    versionFolders.map((version) => [
-                        version,
-                        resolve(__dirname, `src/${version}/cookie-consent.ts`)
-                    ])
-                )
+                    versionFolders.map((version) =>{
+                        const tsPath = resolve(__dirname, `src/${version}/cookie-consent.ts`);
+                        const jsPath = resolve(__dirname, `src/${version}/cookie-consent.js`);
+                        return [
+                            version,
+                            fs.existsSync(tsPath) ? tsPath : jsPath,
+                        ];
+                    }))
             },
             output: {
                 entryFileNames: ({ name }) => (name === 'root' ? 'cookie-consent.js' : `${name}/cookie-consent.js`),
