@@ -286,7 +286,7 @@ function makeCookieTogglersInteractive(): void {
 async function connectToGoogleAnalytics(siteId: string): Promise<void> {
     try {
         initializeGoogleTagCookieWithDefaultConfig()
-        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/cookie-consent/sites/${siteId}`)
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/cookie-consent/sites/${siteId}`)
         if (res.ok) {
             const data = await res.json()
             loadGoogleAnalyticsScript(data.googleAnalyticsId)
