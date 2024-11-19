@@ -19,16 +19,6 @@ export default defineConfig({
     build: {
         target: 'es2015',
         rollupOptions: {
-            // Combine root main file (if it exists) with versioned folders as inputs
-            // input: {
-            //     ...rootMainFile,
-            //     ...Object.fromEntries(
-            //         versionFolders.map((version) => [
-            //             version,
-            //             resolve(__dirname, `src/${version}/cookie-consent.ts`)
-            //         ])
-            //     )
-            // },
             input: {
                 ...rootMainFile,
                 ...Object.fromEntries(
