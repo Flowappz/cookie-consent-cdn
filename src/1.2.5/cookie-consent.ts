@@ -87,6 +87,7 @@ window.addEventListener('DOMContentLoaded', async function initializeCookieConse
     } else {
         showHideManageSettingsBtnByDefault('none')
 
+        console.log('%cPurchase a subscription to access the premium features of Cookie Consent.', 'color: red; font-size: 30px; font-weight: bold;')
     }
 
     const checkbox = document.querySelector<HTMLInputElement>('[flowappz-cookie-choice="necessary"]')
