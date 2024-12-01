@@ -3,9 +3,9 @@ import cssInjectedByJsPlugin from 'vite-plugin-css-injected-by-js';
 import { resolve } from 'path';
 import fs from 'fs';
 
-// Check if there's a cookie-consent.ts file in the src directory root
-const rootMainFile = fs.existsSync(resolve(__dirname, 'src/cookie-consent.ts'))
-    ? { root: resolve(__dirname, 'src/cookie-consent.ts') }
+// Check if there's a cookie-consent.js file in the src directory root
+const rootMainFile = fs.existsSync(resolve(__dirname, 'src/cookie-consent.js'))
+    ? { root: resolve(__dirname, 'src/cookie-consent.js') }
     : {};
 
 // Gather versioned folders in src directory
