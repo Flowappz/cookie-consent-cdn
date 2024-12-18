@@ -12,6 +12,8 @@ interface CookiePreferences {
 }
 
 let cookiePopupHidePeriod: string = 'FOREVER'
+let consentStoringEndpoint: string = ''
+let action: string = ''
 let cookiePreferences: CookiePreferences = {
     strictlyNecessary: true,
     analytics: false,
@@ -85,6 +87,7 @@ window.addEventListener('DOMContentLoaded', async function initializeCookieConse
         if (res.ok) {
             const data = await res.json()
             cookiePopupHidePeriod = data.cookiePopupHidePeriod
+            consentStoringEndpoint = data.consentStoringEndpoint
         }
     }
 
@@ -142,6 +145,7 @@ function enableFreeFunctionality(): void {
             if (popup) {
                 popup.classList.add('flowappz-hide-popup')
             }
+            action = 'acceptAll'
             storeCookiePreferences(cookiePreferences)
         })
     }
@@ -152,6 +156,7 @@ function enableFreeFunctionality(): void {
             if (popup) {
                 popup.classList.add('flowappz-hide-popup')
             }
+            action = 'rejectAll'
             storeCookiePreferences()
         })
     }
@@ -383,11 +388,11 @@ function loadGoogleAnalyticsScript(googleAnalyticsId: string): void {
 function updateGoogleTagCookieConfig(): void {
     try {
         const config = {
-            ad_storage: cookiePreferences.marketing ? 'granted' : 'denied',
-            ad_user_data: cookiePreferences.marketing ? 'granted' : 'denied',
-            ad_personalization: cookiePreferences.personalization ? 'granted' : 'denied',
-            analytics_storage: cookiePreferences.analytics ? 'granted' : 'denied',
-        }
+                ad_storage: cookiePreferences.marketing ? 'granted' : 'denied',
+                ad_user_data: cookiePreferences.marketing ? 'granted' : 'denied',
+                ad_personalization: cookiePreferences.personalization ? 'granted' : 'denied',
+                analytics_storage: cookiePreferences.analytics ? 'granted' : 'denied',
+            }
 
         ;(window as any).gtag('consent', 'update', config)
     } catch (err) {
@@ -395,10 +400,8 @@ function updateGoogleTagCookieConfig(): void {
     }
 }
 
- function cookiePreferencesExpiryDate():Date {
+function cookiePreferencesExpiryDate(): Date {
     let numberOfDays = 30
-
-
 
     if (cookiePopupHidePeriod === 'FOREVER') numberOfDays = 10 * 365
     else if (cookiePopupHidePeriod === 'ONE_YEAR') numberOfDays = 365
@@ -415,9 +418,91 @@ async function storeCookiePreferences(cookieSetup?: CookiePreferences): Promise<
     if (cookieSetup) {
         document.cookie = `cookiePreferences=${JSON.stringify(cookieSetup)}; Path=/; Expires=${expiryDate.toUTCString()}`
         document.cookie = `hidePopup=true; Path=/; Expires=${expiryDate.toUTCString()}`
+
+        if (consentStoringEndpoint.length > 0) {
+            try {
+                // Gather additional data for GDPR compliance
+                const browserInfo = {
+                    userAgent: navigator.userAgent,
+                    platform: navigator.platform,
+                    language: navigator.language,
+                }
+
+                const userIp = await fetch('https://api.ipify.org?format=json')
+                    .then((res) => res.json())
+                    .then((data) => data.ip)
+                    .catch((err) => {
+                        console.error('Failed to fetch IP address:', err)
+                        return 'Unknown IP'
+                    })
+
+                const response = await fetch(consentStoringEndpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        cookiePreferences: cookieSetup,
+                        expiryDate: expiryDate.toUTCString(),
+                        browserInfo,
+                        userIp,
+                        action,
+                    }),
+                })
+
+                if (!response.ok) {
+                    console.error(`Failed to store consent preferences: ${response.status} - ${response.statusText}`)
+                } else {
+                    console.log('Consent preferences successfully stored.')
+                }
+            } catch (error) {
+                console.error('Error storing consent preferences:', error)
+            }
+        }
     } else {
         document.cookie = `cookiePreferences=${JSON.stringify(cookiePreferences)}; Path=/; Expires=${expiryDate.toUTCString()}`
         document.cookie = `hidePopup=true; Path=/; Expires=${expiryDate.toUTCString()}`
+
+        if (consentStoringEndpoint.length > 0) {
+            try {
+                // Gather additional data for GDPR compliance
+                const browserInfo = {
+                    userAgent: navigator.userAgent,
+                    platform: navigator.platform,
+                    language: navigator.language,
+                }
+
+                const userIp = await fetch('https://api.ipify.org?format=json')
+                    .then((res) => res.json())
+                    .then((data) => data.ip)
+                    .catch((err) => {
+                        console.error('Failed to fetch IP address:', err)
+                        return 'Unknown IP'
+                    })
+
+                const response = await fetch(consentStoringEndpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        cookiePreferences, // Ensure this variable is defined
+                        expiryDate: expiryDate.toUTCString(), // Ensure expiryDate is defined
+                        browserInfo,
+                        userIp,
+                        action,
+                    }),
+                })
+
+                if (!response.ok) {
+                    console.error(`Failed to store consent preferences: ${response.status} - ${response.statusText}`)
+                } else {
+                    console.log('Consent preferences successfully stored.')
+                }
+            } catch (error) {
+                console.error('Error storing consent preferences:', error)
+            }
+        }
     }
 }
 
@@ -443,6 +528,7 @@ function handleCookieAccept(): void {
     if (settingsUI) {
         settingsUI.style.display = 'none'
     }
+    action = 'acceptPreferred'
     storeCookiePreferences()
     updateGoogleTagCookieConfig()
     updateUiBasedOnCookiePreferences()
@@ -460,7 +546,7 @@ function handleAcceptAll(): void {
     for (let key in cookiePreferences) {
         cookiePreferences[key] = true
     }
-
+    action = 'acceptAll'
     storeCookiePreferences()
     updateGoogleTagCookieConfig()
     updateUiBasedOnCookiePreferences()
@@ -480,7 +566,7 @@ function handleRejectAll(): void {
             cookiePreferences[key] = false
         }
     }
-
+    action = 'rejectAll'
     storeCookiePreferences()
     updateGoogleTagCookieConfig()
     updateUiBasedOnCookiePreferences()
