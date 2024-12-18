@@ -254,38 +254,7 @@ function shouldShowCookiePopup(): boolean {
     return !cookie
 }
 
-// function setCookieToHidePopup(hidePeriod: string): void {
-//     let numberOfDays = 30
-//
-//     if (hidePeriod === 'FOREVER') numberOfDays = 10 * 365
-//     else if (hidePeriod === 'ONE_YEAR') numberOfDays = 365
-//     else if (hidePeriod === 'SIX_MONTH') numberOfDays = 30 * 6
-//     else if (hidePeriod === 'THREE_MONTH') numberOfDays = 30 * 3
-//
-//     const today = new Date()
-//     const expiryDate = new Date(today.setDate(today.getDate() + numberOfDays))
-//     document.cookie = `hidePopup=true; Path=/; Expires=${expiryDate.toUTCString()}`
-// }
 
-// async function deleteCookiesUsingCookieStore(): Promise<void> {
-//     const cookies = await cookieStore.getAll()
-//
-//     for (let cookie of cookies) {
-//         const { name, domain, path } = cookie
-//         if (name.trim() !== 'hidePopup') await cookieStore.delete({ name, domain, path })
-//     }
-// }
-
-// function expireCookies(): void {
-//     document.cookie
-//         .split(';')
-//         .filter((c) => c.split('=')[0].trim() !== 'hidePopup')
-//         .forEach((c) => {
-//             const cookieKey = c.split('=')[0]
-//             document.cookie = `${cookieKey}=; Path=/; Expires=${new Date().toUTCString()}`
-//             document.cookie = `${cookieKey}=; Path=/; Expires=${new Date().toUTCString()}; domain=.${window.location.host}`
-//         })
-// }
 
 function makeCookieTogglersInteractive(): void {
     const togglers = document.querySelectorAll<HTMLInputElement>(`[flowappz-cookie-choice]`)
@@ -300,32 +269,6 @@ function makeCookieTogglersInteractive(): void {
     })
 }
 
-// async function loadCookiePopup(): Promise<void> {
-//     if (!shouldShowCookiePopup()) {
-//         return
-//     }
-//
-//     makeCookieTogglersInteractive()
-//
-//     const siteId = document.querySelector('html')?.getAttribute('data-wf-site')
-//     if (siteId) {
-//         const res = await fetch(`${import.meta.env.VITE_API_URL}/api/cookie-consent/sites/${siteId}`)
-//         if (res.ok) {
-//             const data = await res.json()
-//
-//             if (!data.cookiePopupEnabled) return
-//
-//             cookiePopupHidePeriod = data.cookiePopupHidePeriod
-//         }
-//     }
-//
-//     cookiePopup = document.getElementById('flowappz-cookie-consent')
-//     if (!cookiePopup) console.error('Cookie popup is enabled but can not find the container!')
-//     else {
-//         cookiePopup.style.display = 'flex'
-//         cookiePopup.style.zIndex = '99999'
-//     }
-// }
 
 async function connectToGoogleAnalytics(siteId: string): Promise<void> {
     try {
@@ -506,18 +449,7 @@ async function storeCookiePreferences(cookieSetup?: CookiePreferences): Promise<
     }
 }
 
-// function handleCookieReject(): void {
-//     if (cookiePopup) {
-//         cookiePopup.style.display = 'none';
-//     }
-//
-//     for (let key in cookiePreferences) {
-//         cookiePreferences[key] = false;
-//     }
-//
-//     storeCookiePreferences();
-//     updateGoogleTagCookieConfig();
-// }
+
 
 function handleCookieAccept(): void {
     console.log('accept button clicked')
