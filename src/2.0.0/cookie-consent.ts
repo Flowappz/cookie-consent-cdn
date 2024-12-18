@@ -12,6 +12,8 @@ interface CookiePreferences {
 }
 
 let cookiePopupHidePeriod: string = 'FOREVER'
+let consentStoringEndpoint: string = ''
+let action: string = ''
 let cookiePreferences: CookiePreferences = {
     strictlyNecessary: true,
     analytics: false,
@@ -85,6 +87,7 @@ window.addEventListener('DOMContentLoaded', async function initializeCookieConse
         if (res.ok) {
             const data = await res.json()
             cookiePopupHidePeriod = data.cookiePopupHidePeriod
+            consentStoringEndpoint = data.consentStoringEndpoint
         }
     }
 
@@ -142,6 +145,7 @@ function enableFreeFunctionality(): void {
             if (popup) {
                 popup.classList.add('flowappz-hide-popup')
             }
+            action = 'acceptAll'
             storeCookiePreferences(cookiePreferences)
         })
     }
@@ -152,6 +156,7 @@ function enableFreeFunctionality(): void {
             if (popup) {
                 popup.classList.add('flowappz-hide-popup')
             }
+            action = 'rejectAll'
             storeCookiePreferences()
         })
     }
@@ -249,38 +254,7 @@ function shouldShowCookiePopup(): boolean {
     return !cookie
 }
 
-// function setCookieToHidePopup(hidePeriod: string): void {
-//     let numberOfDays = 30
-//
-//     if (hidePeriod === 'FOREVER') numberOfDays = 10 * 365
-//     else if (hidePeriod === 'ONE_YEAR') numberOfDays = 365
-//     else if (hidePeriod === 'SIX_MONTH') numberOfDays = 30 * 6
-//     else if (hidePeriod === 'THREE_MONTH') numberOfDays = 30 * 3
-//
-//     const today = new Date()
-//     const expiryDate = new Date(today.setDate(today.getDate() + numberOfDays))
-//     document.cookie = `hidePopup=true; Path=/; Expires=${expiryDate.toUTCString()}`
-// }
 
-// async function deleteCookiesUsingCookieStore(): Promise<void> {
-//     const cookies = await cookieStore.getAll()
-//
-//     for (let cookie of cookies) {
-//         const { name, domain, path } = cookie
-//         if (name.trim() !== 'hidePopup') await cookieStore.delete({ name, domain, path })
-//     }
-// }
-
-// function expireCookies(): void {
-//     document.cookie
-//         .split(';')
-//         .filter((c) => c.split('=')[0].trim() !== 'hidePopup')
-//         .forEach((c) => {
-//             const cookieKey = c.split('=')[0]
-//             document.cookie = `${cookieKey}=; Path=/; Expires=${new Date().toUTCString()}`
-//             document.cookie = `${cookieKey}=; Path=/; Expires=${new Date().toUTCString()}; domain=.${window.location.host}`
-//         })
-// }
 
 function makeCookieTogglersInteractive(): void {
     const togglers = document.querySelectorAll<HTMLInputElement>(`[flowappz-cookie-choice]`)
@@ -295,32 +269,6 @@ function makeCookieTogglersInteractive(): void {
     })
 }
 
-// async function loadCookiePopup(): Promise<void> {
-//     if (!shouldShowCookiePopup()) {
-//         return
-//     }
-//
-//     makeCookieTogglersInteractive()
-//
-//     const siteId = document.querySelector('html')?.getAttribute('data-wf-site')
-//     if (siteId) {
-//         const res = await fetch(`${import.meta.env.VITE_API_URL}/api/cookie-consent/sites/${siteId}`)
-//         if (res.ok) {
-//             const data = await res.json()
-//
-//             if (!data.cookiePopupEnabled) return
-//
-//             cookiePopupHidePeriod = data.cookiePopupHidePeriod
-//         }
-//     }
-//
-//     cookiePopup = document.getElementById('flowappz-cookie-consent')
-//     if (!cookiePopup) console.error('Cookie popup is enabled but can not find the container!')
-//     else {
-//         cookiePopup.style.display = 'flex'
-//         cookiePopup.style.zIndex = '99999'
-//     }
-// }
 
 async function connectToGoogleAnalytics(siteId: string): Promise<void> {
     try {
@@ -383,11 +331,11 @@ function loadGoogleAnalyticsScript(googleAnalyticsId: string): void {
 function updateGoogleTagCookieConfig(): void {
     try {
         const config = {
-            ad_storage: cookiePreferences.marketing ? 'granted' : 'denied',
-            ad_user_data: cookiePreferences.marketing ? 'granted' : 'denied',
-            ad_personalization: cookiePreferences.personalization ? 'granted' : 'denied',
-            analytics_storage: cookiePreferences.analytics ? 'granted' : 'denied',
-        }
+                ad_storage: cookiePreferences.marketing ? 'granted' : 'denied',
+                ad_user_data: cookiePreferences.marketing ? 'granted' : 'denied',
+                ad_personalization: cookiePreferences.personalization ? 'granted' : 'denied',
+                analytics_storage: cookiePreferences.analytics ? 'granted' : 'denied',
+            }
 
         ;(window as any).gtag('consent', 'update', config)
     } catch (err) {
@@ -395,10 +343,8 @@ function updateGoogleTagCookieConfig(): void {
     }
 }
 
- function cookiePreferencesExpiryDate():Date {
+function cookiePreferencesExpiryDate(): Date {
     let numberOfDays = 30
-
-
 
     if (cookiePopupHidePeriod === 'FOREVER') numberOfDays = 10 * 365
     else if (cookiePopupHidePeriod === 'ONE_YEAR') numberOfDays = 365
@@ -415,24 +361,95 @@ async function storeCookiePreferences(cookieSetup?: CookiePreferences): Promise<
     if (cookieSetup) {
         document.cookie = `cookiePreferences=${JSON.stringify(cookieSetup)}; Path=/; Expires=${expiryDate.toUTCString()}`
         document.cookie = `hidePopup=true; Path=/; Expires=${expiryDate.toUTCString()}`
+
+        if (consentStoringEndpoint.length > 0) {
+            try {
+                // Gather additional data for GDPR compliance
+                const browserInfo = {
+                    userAgent: navigator.userAgent,
+                    platform: navigator.platform,
+                    language: navigator.language,
+                }
+
+                const userIp = await fetch('https://api.ipify.org?format=json')
+                    .then((res) => res.json())
+                    .then((data) => data.ip)
+                    .catch((err) => {
+                        console.error('Failed to fetch IP address:', err)
+                        return 'Unknown IP'
+                    })
+
+                const response = await fetch(consentStoringEndpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        cookiePreferences: cookieSetup,
+                        expiryDate: expiryDate.toUTCString(),
+                        browserInfo,
+                        userIp,
+                        action,
+                    }),
+                })
+
+                if (!response.ok) {
+                    console.error(`Failed to store consent preferences: ${response.status} - ${response.statusText}`)
+                } else {
+                    console.log('Consent preferences successfully stored.')
+                }
+            } catch (error) {
+                console.error('Error storing consent preferences:', error)
+            }
+        }
     } else {
         document.cookie = `cookiePreferences=${JSON.stringify(cookiePreferences)}; Path=/; Expires=${expiryDate.toUTCString()}`
         document.cookie = `hidePopup=true; Path=/; Expires=${expiryDate.toUTCString()}`
+
+        if (consentStoringEndpoint.length > 0) {
+            try {
+                // Gather additional data for GDPR compliance
+                const browserInfo = {
+                    userAgent: navigator.userAgent,
+                    platform: navigator.platform,
+                    language: navigator.language,
+                }
+
+                const userIp = await fetch('https://api.ipify.org?format=json')
+                    .then((res) => res.json())
+                    .then((data) => data.ip)
+                    .catch((err) => {
+                        console.error('Failed to fetch IP address:', err)
+                        return 'Unknown IP'
+                    })
+
+                const response = await fetch(consentStoringEndpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        cookiePreferences, // Ensure this variable is defined
+                        expiryDate: expiryDate.toUTCString(), // Ensure expiryDate is defined
+                        browserInfo,
+                        userIp,
+                        action,
+                    }),
+                })
+
+                if (!response.ok) {
+                    console.error(`Failed to store consent preferences: ${response.status} - ${response.statusText}`)
+                } else {
+                    console.log('Consent preferences successfully stored.')
+                }
+            } catch (error) {
+                console.error('Error storing consent preferences:', error)
+            }
+        }
     }
 }
 
-// function handleCookieReject(): void {
-//     if (cookiePopup) {
-//         cookiePopup.style.display = 'none';
-//     }
-//
-//     for (let key in cookiePreferences) {
-//         cookiePreferences[key] = false;
-//     }
-//
-//     storeCookiePreferences();
-//     updateGoogleTagCookieConfig();
-// }
+
 
 function handleCookieAccept(): void {
     console.log('accept button clicked')
@@ -443,6 +460,7 @@ function handleCookieAccept(): void {
     if (settingsUI) {
         settingsUI.style.display = 'none'
     }
+    action = 'acceptPreferred'
     storeCookiePreferences()
     updateGoogleTagCookieConfig()
     updateUiBasedOnCookiePreferences()
@@ -460,7 +478,7 @@ function handleAcceptAll(): void {
     for (let key in cookiePreferences) {
         cookiePreferences[key] = true
     }
-
+    action = 'acceptAll'
     storeCookiePreferences()
     updateGoogleTagCookieConfig()
     updateUiBasedOnCookiePreferences()
@@ -480,7 +498,7 @@ function handleRejectAll(): void {
             cookiePreferences[key] = false
         }
     }
-
+    action = 'rejectAll'
     storeCookiePreferences()
     updateGoogleTagCookieConfig()
     updateUiBasedOnCookiePreferences()
